@@ -1,8 +1,9 @@
 """FastAPI application — Maritime AI Sentinel."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import risk, vessels, alerts, chat
+from api.routes import alerts, chat, risk, vessels
 
 app = FastAPI(
     title="Maritime AI Sentinel",

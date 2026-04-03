@@ -1,8 +1,8 @@
 """Embedding pipeline — generates vectors from unstructured text and stores in ChromaDB."""
+
 from maritime_sentinel.config import settings
 
-
-EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_MODEL = settings.embedding_model
 CHUNK_SIZE = 512
 CHUNK_OVERLAP = 64
 COLLECTION_NAME = "maritime_intelligence"

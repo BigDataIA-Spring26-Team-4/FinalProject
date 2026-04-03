@@ -1,6 +1,10 @@
 """Tests for Pydantic output schemas."""
+
 from datetime import datetime
-from maritime_sentinel.agents.schemas import RiskScore, Citation, SanctionsMatch
+
+import pytest
+
+from maritime_sentinel.agents.schemas import Citation, RiskScore
 
 
 def test_risk_score_valid():
@@ -21,16 +25,24 @@ def test_risk_score_valid():
 
 def test_risk_score_bounds():
     """Score must be 0-100."""
-    import pytest
     with pytest.raises(Exception):
         RiskScore(
             region="test",
             composite_score=150.0,  # Out of bounds
-            geopolitical_score=0, weather_score=0, sanctions_score=0, conflict_score=0,
-            timestamp=datetime.now(), citations=[],
+            geopolitical_score=0,
+            weather_score=0,
+            sanctions_score=0,
+            conflict_score=0,
+            timestamp=datetime.now(),
+            citations=[],
         )
 
 
 def test_citation_confidence_bounds():
-    citation = Citation(source_id="gdelt_123", source_type="gdelt", text_snippet="test", confidence=0.95)
+    citation = Citation(
+        source_id="gdelt_123",
+        source_type="gdelt",
+        text_snippet="test",
+        confidence=0.95,
+    )
     assert citation.confidence == 0.95

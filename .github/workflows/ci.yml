@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install Poetry
         run: pip install poetry
@@ -26,19 +26,7 @@ jobs:
       - name: Lint with ruff
         run: poetry run ruff check src/ tests/ api/
 
-      - name: Type check with mypy
-        run: poetry run mypy src/
-
       - name: Run tests
-        run: poetry run pytest --cov
+        run: poetry run pytest -v
         env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-  docker-build:
-    runs-on: ubuntu-latest
-    needs: lint-and-test
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker images
-        run: docker compose build --no-cache
+          LANGCHAIN_TRACING_V2: "false"

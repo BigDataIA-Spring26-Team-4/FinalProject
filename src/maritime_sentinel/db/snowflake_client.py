@@ -1,5 +1,7 @@
 """Snowflake client — connection management and query execution."""
+
 import snowflake.connector
+
 from maritime_sentinel.config import settings
 
 

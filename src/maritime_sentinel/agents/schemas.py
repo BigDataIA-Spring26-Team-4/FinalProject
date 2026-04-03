@@ -1,11 +1,14 @@
 """Pydantic output schemas for all agents — enforced by guardrails."""
+
 from datetime import datetime
 from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
 class Citation(BaseModel):
     """A source citation backing a factual claim."""
+
     source_id: str
     source_type: Literal["gdelt", "acled", "ofac", "weather", "ais"]
     text_snippet: str
@@ -14,6 +17,7 @@ class Citation(BaseModel):
 
 class RiskScore(BaseModel):
     """Composite risk assessment for a region or chokepoint."""
+
     region: str
     composite_score: float = Field(ge=0, le=100)
     geopolitical_score: float = Field(ge=0, le=100)
@@ -27,6 +31,7 @@ class RiskScore(BaseModel):
 
 class RouteAdvisory(BaseModel):
     """Rerouting recommendation for a specific vessel."""
+
     vessel_mmsi: str
     current_route: str
     recommended_route: str
@@ -40,6 +45,7 @@ class RouteAdvisory(BaseModel):
 
 class SanctionsMatch(BaseModel):
     """Result of sanctions screening for a vessel or entity."""
+
     entity_name: str
     entity_type: Literal["vessel", "company", "individual"]
     match_confidence: float = Field(ge=0, le=1)
@@ -50,6 +56,7 @@ class SanctionsMatch(BaseModel):
 
 class WeatherAlert(BaseModel):
     """Weather impact assessment for a shipping route."""
+
     chokepoint_id: str
     severity: Literal["low", "moderate", "high", "extreme"]
     event_type: str
