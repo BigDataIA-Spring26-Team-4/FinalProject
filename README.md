@@ -540,8 +540,8 @@ M7 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 | Member | Primary Role | Responsibilities |
 |---|---|---|
 | **Deep Prajapati** | LLM Engineer + ETL Lead | AIS streaming pipeline, GDELT/ACLED/OFAC ingestion, LangGraph multi-agent system (5 agents + supervisor), MCP server, Redis caching integration, prompt engineering, LangSmith eval setup, overall architecture |
-| **Tapan Patel** | Cloud Architect + Data Engineer | Snowflake warehouse design (medallion schema), Airflow DAG development, Silver/Gold transformations, FastAPI backend, Docker Compose orchestration, AWS EC2 deployment, CI/CD pipeline |
-| **Seamus McAvoy** | QA/Test Engineer + Frontend | Streamlit dashboard (Kepler.gl globe, PyGWalker, chat UI), guardrails implementation (Pydantic schemas, HITL panel), test suite (pytest), documentation (Codelabs, README), video coordination |
+| **Seamus McAvoy** | Cloud Architect + Data Engineer | Snowflake warehouse design (medallion schema), Airflow DAG development, Silver/Gold transformations, FastAPI backend, Docker Compose orchestration, AWS EC2 deployment, CI/CD pipeline |
+| **Tapan Patel** | QA/Test Engineer + Frontend | Streamlit dashboard (Kepler.gl globe, PyGWalker, chat UI), guardrails implementation (Pydantic schemas, HITL panel), test suite (pytest), documentation (Codelabs, README), video coordination |
 
 ---
 
