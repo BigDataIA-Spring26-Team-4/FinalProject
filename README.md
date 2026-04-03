@@ -71,8 +71,8 @@ The primary goals of this project are:
   - Human-in-the-Loop (HITL) gates for high-risk alerts (risk score > 75)
 
 - **Cloud Infrastructure**
-  - AWS EC2 hosting Docker containers: Airflow, FastAPI, Streamlit, ChromaDB, AIS consumer
-  - Snowflake as central data warehouse ($300 credits)
+  - AWS EC2 hosting Docker containers: Airflow, FastAPI, Streamlit, ChromaDB, Redis, AIS consumer
+  - Snowflake as central data warehouse
   - GitHub Actions CI/CD pipeline
 
 - **Guardrails & HITL**
@@ -116,7 +116,7 @@ The primary goals of this project are:
 - **LLM Hallucination Risk:** Applying LLMs naively to high-stakes maritime decisions is dangerous. Hallucinated sanctions matches or false rerouting recommendations could cost millions or create legal liability.
 
 ### 4.2 Opportunities
-- **Scalable Pipelines:** Snowflake's elastic compute + Airflow orchestration enables processing of multi-TB maritime datasets with pay-per-use economics using our $300 credit allocation.
+- **Scalable Pipelines:** Snowflake's elastic compute + Airflow orchestration enables processing of multi-TB maritime datasets with pay-per-use economics.
 
 - **LLM-Assisted Analysis:** A LangGraph multi-agent system can decompose complex supply chain questions into sub-tasks (sanctions check, route analysis, risk scoring) handled by specialist agents—mimicking a team of human analysts at 100x speed.
 
@@ -149,23 +149,24 @@ The primary goals of this project are:
 
 | Layer | Technology | Why This Over Alternatives |
 |---|---|---|
-| **Cloud Data Warehouse** | Snowflake ($300 credits) | Elastic compute, native semi-structured JSON support, Snowpipe for streaming ingest, zero-copy cloning for dev/prod. Chosen over BigQuery (limited credits) and Redshift (less flexible scaling). |
-| **Orchestration** | Apache Airflow (Docker) | Industry-standard DAG orchestration with rich operator ecosystem. Proven in our PE Org-AI-R project (CS1–CS5). Chosen over Prefect (smaller community) and Dagster (less mature). |
+| **Cloud Data Warehouse** | Snowflake | Elastic compute, native semi-structured JSON support, Snowpipe for streaming ingest, zero-copy cloning for dev/prod. Chosen over BigQuery (higher cost at scale) and Redshift (less flexible scaling). |
+| **Orchestration** | Apache Airflow (Docker) | Industry-standard DAG orchestration with rich operator ecosystem, including Snowflake operators. Chosen over Prefect (smaller community) and Dagster (less mature). |
 | **Streaming Ingest** | Python asyncio + WebSocket | aisstream.io delivers AIS via WebSocket; async Python is the lightest-weight consumer. Chosen over Kafka (overkill for single-source academic project). |
-| **Compute / Processing** | Snowflake SQL + Snowpark Python UDFs | Process data where it lives. Snowpark for feature engineering. Chosen over Spark/EMR (additional infra cost beyond Snowflake credits). |
+| **Compute / Processing** | Snowflake SQL + Snowpark Python UDFs | Process data where it lives. Snowpark for feature engineering within the warehouse. Chosen over Spark/EMR (additional infra cost and operational overhead). |
 | **LLM Providers** | Claude Sonnet + OpenAI GPT-4o-mini | Claude for complex reasoning agents; GPT-4o-mini for high-volume classification. Dual-provider for cost optimization + resilience. |
 | **Embeddings** | OpenAI text-embedding-3-small (1536d) | Best cost/quality ratio at $0.02/1M tokens. Chosen over Cohere (fewer integrations) and local models (GPU-limited). |
-| **Vector Store** | ChromaDB (self-hosted Docker) | Zero-cost, persistent, good Python integration. Proven in PE Org-AI-R CS4/CS5. Chosen over Pinecone (paid) and Weaviate (heavier infra). |
-| **Agentic Framework** | LangGraph | Graph-based stateful multi-agent orchestration with HITL gates, conditional branching, LangSmith observability. Chosen over CrewAI (less control) and AutoGen (less production-ready). |
-| **Tool Protocol** | MCP (Model Context Protocol) | Exposes maritime data as structured tools for agents (get_chokepoint_risk, screen_vessel, etc.). Same pattern proven in PE Org-AI-R CS5. |
+| **Vector Store** | ChromaDB (self-hosted Docker) | Zero-cost, persistent, good Python integration. Chosen over Pinecone (paid) and Weaviate (heavier infra). |
+| **Caching** | Redis (Docker) | In-memory cache for Snowflake Gold query results, MCP tool responses, and embedding lookups. Reduces Snowflake compute costs and agent response latency. Chosen over Memcached (less feature-rich, no persistence). |
+| **Agentic Framework** | LangGraph | Graph-based stateful multi-agent orchestration with HITL gates, conditional branching, and LangSmith observability. Chosen over CrewAI (less control over graph topology) and AutoGen (less production-ready). |
+| **Tool Protocol** | MCP (Model Context Protocol) | Exposes maritime data as structured tools for agents (get_chokepoint_risk, screen_vessel, etc.). Standardized JSON-RPC protocol for agent ↔ tool communication. |
 | **Agent Testing** | ArkSim (Arklex AI) | Simulates multi-turn conversations with synthetic users to stress-test agents pre-production. Introduced in DAMG 7245 class. |
-| **Trajectory Analytics** | MovingPandas | Stop detection, trajectory splitting, transit time computation on AIS tracks. Purpose-built for movement data. |
-| **API Layer** | FastAPI | Async, auto-OpenAPI docs, Pydantic validation. Chosen over Flask (sync) and Django (too heavy). |
-| **Frontend** | Streamlit + Kepler.gl | Rapid prototyping with Kepler.gl for GPU-rendered geospatial visualization (3D arcs, hexbin heatmaps). Chosen over React (time constraint). |
-| **EDA / Exploration** | PyGWalker | Tableau-like interactive exploration inside Streamlit. Drag-and-drop visual analysis without separate BI tool. |
-| **CI/CD** | GitHub Actions | Free for public repos, tight GitHub integration. Proven across CS1–CS5. |
-| **Containerization** | Docker + Docker Compose | Multi-service orchestration (Airflow, FastAPI, ChromaDB, Streamlit, AIS consumer). |
-| **Project Management** | GitHub Projects Kanban + Issues | Satisfies TA requirement for Kanban boards. |
+| **Trajectory Analytics** | MovingPandas | Stop detection, trajectory splitting, transit time computation on AIS tracks. Purpose-built for movement data analysis. |
+| **API Layer** | FastAPI | Async, auto-OpenAPI docs, Pydantic validation. Chosen over Flask (sync) and Django (too heavy for API-only service). |
+| **Frontend** | Streamlit + Kepler.gl | Rapid prototyping with Kepler.gl for GPU-rendered geospatial visualization (3D arcs, hexbin heatmaps). Chosen over React (time constraint for a 22-day project). |
+| **EDA / Exploration** | PyGWalker | Tableau-like interactive exploration inside Streamlit. Drag-and-drop visual analysis without a separate BI tool. |
+| **CI/CD** | GitHub Actions | Free for public repos, tight GitHub integration, matrix builds for multi-service Docker testing. |
+| **Containerization** | Docker + Docker Compose | Multi-service orchestration (Airflow, FastAPI, ChromaDB, Redis, Streamlit, AIS consumer). Consistent dev/prod environments. |
+| **Project Management** | GitHub Projects Kanban + Issues | Integrated with the repository for issue tracking and sprint planning. |
 
 ### 5.3 Architecture
 
@@ -176,20 +177,20 @@ We evaluated three architectural approaches before selecting our final design:
 **Architecture A: Fully GCP-Native**
 - BigQuery for storage + Dataproc for Spark processing + Cloud Run for APIs + Vertex AI for agents
 - *Pros:* Tight integration, managed services, less ops overhead
-- *Cons:* No Snowflake credits to leverage, Vertex AI agent tooling less mature than LangGraph, vendor lock-in
-- *Verdict:* Rejected — cannot use $300 Snowflake credits, and LangGraph is more flexible for custom multi-agent orchestration
+- *Cons:* Higher cost for sustained compute, Vertex AI agent tooling less mature than LangGraph, vendor lock-in to GCP ecosystem
+- *Verdict:* Rejected — LangGraph provides more flexible custom multi-agent orchestration, and Snowflake offers better semi-structured data handling for our JSON-heavy sources
 
 **Architecture B: Kafka-Centric Streaming**
 - Confluent Kafka for all data ingestion (AIS + batch sources) + Kafka Streams for processing + ksqlDB for analytics
 - *Pros:* True real-time for all sources, unified streaming paradigm
-- *Cons:* Massive infra overhead for academic project, overkill when only AIS needs real-time, Kafka cluster costs exceed budget
-- *Verdict:* Rejected — streaming overhead doesn't justify the single real-time source (AIS)
+- *Cons:* Massive infrastructure overhead for an academic project, overkill when only AIS needs real-time, Kafka cluster costs exceed budget
+- *Verdict:* Rejected — streaming overhead doesn't justify the single real-time source (AIS); batch is more appropriate for GDELT/ACLED/OFAC
 
 **Architecture C: Snowflake-Centric with Targeted Streaming (SELECTED)**
-- Snowflake as central warehouse + Airflow for batch orchestration + async Python for AIS streaming + LangGraph agents with MCP tools
-- *Pros:* Leverages $300 Snowflake credits, batch pipelines cover 6/7 sources efficiently, streaming only where needed (AIS), LangGraph provides maximum agent flexibility, MCP proven in PE Org-AI-R
+- Snowflake as central warehouse + Airflow for batch orchestration + async Python for AIS streaming + Redis for caching + LangGraph agents with MCP tools
+- *Pros:* Batch pipelines cover 6/7 sources efficiently, streaming only where needed (AIS), Redis caching layer reduces warehouse load and agent latency, LangGraph provides maximum agent flexibility, MCP standardizes tool communication
 - *Cons:* AIS streaming handled outside Snowflake (Python consumer → staged load), not a pure streaming architecture
-- *Verdict:* **Selected** — best balance of cost, complexity, and capability for a 22-day academic project
+- *Verdict:* **Selected** — best balance of cost, complexity, and capability for a 22-day project timeline
 
 #### 5.3.2 System Architecture Diagram
 
@@ -223,13 +224,17 @@ graph TB
             GOLD["Gold Layer\nRisk scores, transit analytics\nChokepoint aggregates"]
         end
 
+        subgraph CACHE["Caching Layer"]
+            REDIS["Redis\nGold query cache\nMCP tool response cache\nEmbedding lookup cache"]
+        end
+
         subgraph VECTOR["Vector Pipeline"]
             EMB["Embedding Pipeline\nOpenAI text-embedding-3-small"]
             CHROMA["ChromaDB\nVector Store"]
         end
 
         subgraph MCP_SRV["MCP Server"]
-            TOOLS["Maritime Tools\nget_chokepoint_risk\nscreen_vessel_sanctions\nquery_vessel_positions\nget_weather_alerts\nget_conflict_events"]
+            TOOLS["Maritime Tools\nget_chokepoint_risk\nscreen_vessel_sanctions\nquery_vessel_positions\nget_weather_alerts\nget_conflict_events\nget_port_info"]
         end
 
         subgraph AGENTS["LangGraph Agent System"]
@@ -271,14 +276,16 @@ graph TB
     SILVER -->|"articles + sanctions"| EMB
     EMB --> CHROMA
 
-    GOLD --> TOOLS
-    CHROMA --> TOOLS
+    GOLD --> REDIS
+    CHROMA --> REDIS
+    REDIS --> TOOLS
     TOOLS --> SUP
     SUP --> A1 & A2 & A3 & A4 & A5
     A1 & A2 & A3 & A4 & A5 --> SUP
     SUP --> HITL
 
     GOLD --> FAPI
+    REDIS --> FAPI
     SUP --> FAPI
     HITL --> FAPI
     FAPI --> UI
@@ -311,6 +318,10 @@ flowchart TD
         BR["Bronze\nRaw, unvalidated\nJSON/CSV as-ingested"]
         SL["Silver\nDeduplicated, typed\nGeo-enriched\nMovingPandas trajectories"]
         GL["Gold\nChokepoint risk scores\nTransit time aggregates\nVessel risk profiles"]
+    end
+
+    subgraph CACHING["Caching Layer"]
+        RD["Redis\nGold query results (5-min TTL)\nMCP tool responses (2-min TTL)\nEmbedding lookups"]
     end
 
     subgraph EMBED["Embedding Pipeline"]
@@ -351,8 +362,9 @@ flowchart TD
     SL -->|"articles + sanctions text"| EMBED_GEN
     EMBED_GEN --> CHROMA_DB
 
-    GL --> MCP_TOOLS
-    CHROMA_DB --> MCP_TOOLS
+    GL --> RD
+    CHROMA_DB --> RD
+    RD --> MCP_TOOLS
     MCP_TOOLS --> SUP
     SUP --> AG1 & AG2 & AG3 & AG4 & AG5
     AG1 & AG2 & AG3 & AG4 & AG5 -->|"sub-task results"| SUP
@@ -361,6 +373,7 @@ flowchart TD
     HITL -->|"approved alert"| API
     HITL -->|"escalate"| USR
     GL --> API
+    RD --> API
     API --> UI
     UI --> USR
 ```
@@ -393,6 +406,12 @@ flowchart TD
   - `gold_vessel_risk_profile` — per-vessel sanctions probability + route risk
   - `gold_transit_analytics` — average transit times, delays, throughput per chokepoint
 
+#### Caching Strategy (Redis)
+- **Gold Query Cache**: Frequently accessed Snowflake Gold aggregates (chokepoint risk scores, vessel profiles) cached in Redis with a 5-minute TTL. Prevents redundant warehouse queries when multiple agents or dashboard refreshes request the same data.
+- **MCP Tool Response Cache**: Responses from MCP tools (e.g., `get_chokepoint_risk("hormuz")`) cached with a 2-minute TTL. Agents hitting the same tool within the window get instant responses without re-querying Snowflake.
+- **Embedding Lookup Cache**: Recently queried ChromaDB results cached by query hash. Avoids re-embedding and re-searching for repeated or similar queries within a session.
+- **AIS Latest Position Cache**: Most recent position per MMSI stored in Redis (key: `vessel:{mmsi}`, value: lat/lon/speed/heading/timestamp). Updated by the AIS consumer on every batch write. Enables sub-second vessel lookups without querying Snowflake.
+
 #### Embedding Generation
 - **Source documents**: GDELT article titles + GKG themes/tone summaries, ACLED event descriptions, OFAC entity descriptions
 - **Model**: OpenAI `text-embedding-3-small` (1536 dimensions, $0.02/1M tokens)
@@ -404,7 +423,7 @@ flowchart TD
 
 #### Multi-Agent Architecture (LangGraph + MCP)
 
-The intelligence engine uses a **LangGraph supervisor pattern** with 5 specialist agents, connected to Snowflake and ChromaDB via an **MCP server** exposing structured tools:
+The intelligence engine uses a **LangGraph supervisor pattern** with 5 specialist agents, connected to Snowflake and ChromaDB via an **MCP server** with a **Redis caching layer** in between:
 
 | Agent | LLM | Role | MCP Tools Used |
 |---|---|---|---|
@@ -416,10 +435,10 @@ The intelligence engine uses a **LangGraph supervisor pattern** with 5 specialis
 | **Weather Analyst** | GPT-4o-mini | Assesses storm/weather impact on shipping routes | `get_weather_alerts`, `get_chokepoint_status` |
 
 #### MCP Server Design
-The MCP server follows the same stdio JSON-RPC pattern proven in PE Org-AI-R CS5:
 - **6 Tools**: `get_chokepoint_risk`, `screen_vessel_sanctions`, `query_vessel_positions`, `get_weather_alerts`, `get_conflict_events`, `get_port_info`
 - **2 Resources**: `chokepoint_list` (static reference), `active_alerts` (dynamic feed)
 - **2 Prompts**: `maritime_risk_briefing`, `vessel_investigation`
+- **Caching**: All tool responses pass through Redis before hitting Snowflake/ChromaDB. Cache hits bypass the warehouse entirely, reducing both latency and compute cost.
 
 #### Prompt Design
 Each agent has a system prompt with:
@@ -432,7 +451,7 @@ Each agent has a system prompt with:
 
 #### RAG Strategy
 1. User query or automated alert trigger → embed with same model → ChromaDB similarity search (k=10) with metadata filters (date recency, region)
-2. Top-k retrieved chunks + relevant Snowflake Gold aggregates (via MCP SQL tools) injected into agent prompt
+2. Top-k retrieved chunks + relevant Snowflake Gold aggregates (via MCP tools, served from Redis cache) injected into agent prompt
 3. Agent generates response with inline citations
 4. Guardrails module verifies citations exist in retrieved context
 
@@ -440,10 +459,10 @@ Each agent has a system prompt with:
 **User asks:** *"What is the current risk for LNG tankers transiting the Strait of Hormuz?"*
 
 1. Supervisor receives query → identifies geopolitical + weather + vessel dimensions → routes to News Analyst, Conflict Monitor, Weather Analyst, and Vessel Tracker in parallel
-2. News Analyst: retrieves recent GDELT events near Hormuz from ChromaDB, queries Snowflake for escalation trends → produces risk narrative with citations
+2. News Analyst: retrieves recent GDELT events near Hormuz from ChromaDB, queries Snowflake (via Redis cache) for escalation trends → produces risk narrative with citations
 3. Conflict Monitor: queries ACLED data for recent incidents, pulls CAST forecast → scores regional conflict probability
 4. Weather Analyst: checks active severe weather alerts in Hormuz corridor → assesses routing impact
-5. Vessel Tracker: queries current AIS positions of LNG-flagged vessels near Hormuz → reports count, ETAs, and any anomalies
+5. Vessel Tracker: queries Redis for latest AIS positions of LNG-flagged vessels near Hormuz → reports count, ETAs, and any anomalies (sub-second response from cache)
 6. Supervisor: merges all sub-results → computes composite risk score (0–100) → if > 75, routes to HITL gate
 7. Briefing output streamed to Streamlit chat interface with citations and recommended actions
 
@@ -467,8 +486,8 @@ Each agent has a system prompt with:
 - **LangSmith Tracing**: Every agent invocation traced for latency, token usage, tool calls, and error rates
 
 #### Software Testing
-- **Unit Tests** (pytest): ETL transformation functions, Pydantic schema validation, embedding pipeline, sanctions fuzzy matching, MovingPandas trajectory processing
-- **Integration Tests**: End-to-end Airflow DAG runs on sample data, FastAPI endpoint response validation, agent workflow with mock LLM responses
+- **Unit Tests** (pytest): ETL transformation functions, Pydantic schema validation, embedding pipeline, sanctions fuzzy matching, MovingPandas trajectory processing, Redis cache operations
+- **Integration Tests**: End-to-end Airflow DAG runs on sample data, FastAPI endpoint response validation, agent workflow with mock LLM responses, Redis cache hit/miss verification
 - **CI Pipeline**: GitHub Actions → lint (ruff) → type check (mypy) → unit tests → integration tests → Docker build
 
 #### Metrics
@@ -478,6 +497,7 @@ Each agent has a system prompt with:
 | Agent accuracy (golden set) | ≥ 4.0 / 5.0 average | LLM-as-judge rubric |
 | Sanctions match precision | ≥ 90% | Manual review of top-50 matches |
 | End-to-end latency (single query) | < 30 seconds | LangSmith P95 |
+| Redis cache hit rate | ≥ 70% for Gold queries | Redis `INFO stats` monitoring |
 | AIS ingest throughput | ≥ 5,000 positions/min | Snowflake ingestion monitoring |
 | API response time (P95) | < 2 seconds | FastAPI logging |
 | Token cost per query | < $0.05 average | LangSmith cost tracking |
@@ -519,7 +539,7 @@ The following POC components will be developed and committed to the GitHub repos
 | **M1** | Data Ingestion & Pipeline Setup | Apr 2–6 | All 7 data source connectors operational; raw data landing in Snowflake Bronze; AIS WebSocket consumer running |
 | **M2** | Big Data Processing Pipeline | Apr 5–9 | Silver/Gold transformations in Snowflake; Airflow DAGs for all sources; data quality gates; MovingPandas trajectory processing |
 | **M3** | Embedding + Vector Pipeline | Apr 7–10 | ChromaDB populated with ~50K documents; embedding pipeline tested; metadata filters working |
-| **M4** | LLM Integration + Agents + Guardrails | Apr 9–15 | LangGraph supervisor + 5 agents; MCP server with 6 tools; RAG retrieval; Pydantic schemas; HITL gate |
+| **M4** | LLM Integration + Agents + Guardrails | Apr 9–15 | LangGraph supervisor + 5 agents; MCP server with 6 tools; Redis caching layer; RAG retrieval; Pydantic schemas; HITL gate |
 | **M5** | Backend APIs | Apr 12–16 | FastAPI endpoints for risk scores, vessel search, agent chat, alert feed; OpenAPI docs |
 | **M6** | Frontend / Dashboard | Apr 14–19 | Streamlit dashboard with Kepler.gl globe, PyGWalker EDA, risk heatmaps, agentic chat interface |
 | **M7** | Testing + Evals | Apr 18–22 | Golden set evals, ArkSim stress tests, unit/integration tests, CI pipeline green |
@@ -547,7 +567,7 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 
 | Member | Primary Role | Responsibilities |
 |---|---|---|
-| **Deep Prajapati** | LLM Engineer + ETL Lead | AIS streaming pipeline, GDELT/ACLED/OFAC ingestion, ChromaDB embedding pipeline, LangGraph multi-agent system (5 agents + supervisor), MCP server, prompt engineering, LangSmith eval setup, overall architecture |
+| **Deep Prajapati** | LLM Engineer + ETL Lead | AIS streaming pipeline, GDELT/ACLED/OFAC ingestion, ChromaDB embedding pipeline, LangGraph multi-agent system (5 agents + supervisor), MCP server, Redis caching integration, prompt engineering, LangSmith eval setup, overall architecture |
 | **Tapan Patel** | Cloud Architect + Data Engineer | Snowflake warehouse design (medallion schema), Airflow DAG development, Silver/Gold transformations, FastAPI backend, Docker Compose orchestration, AWS EC2 deployment, CI/CD pipeline |
 | **Seamus McAvoy** | QA/Test Engineer + Frontend | Streamlit dashboard (Kepler.gl globe, PyGWalker, chat UI), guardrails implementation (Pydantic schemas, HITL panel), ArkSim agent testing, test suite (pytest), documentation (Codelabs, README), video coordination |
 
@@ -555,18 +575,16 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 
 ## 8. Risks & Mitigation
 
-### 8.1 Potential Risks
-
 | Risk | Severity | Likelihood | Mitigation Strategy |
 |---|---|---|---|
-| aisstream.io rate limits or downtime | Medium | Medium | Exponential backoff + retry; cache last-known positions; fallback to batch snapshots |
+| aisstream.io rate limits or downtime | Medium | Medium | Exponential backoff + retry; cache last-known positions in Redis; fallback to batch snapshots |
 | GDELT BigQuery free tier exhaustion | Medium | Low | Pre-filter to maritime CAMEO codes only; cache results in Snowflake; use gdeltPyR Doc API as backup |
 | LLM hallucinations on risk scores | High | Medium | Citation grounding guardrail + cross-check against Snowflake Gold + HITL gate for high-risk outputs |
-| Snowflake credit burn rate | High | Medium | XS warehouse; 60s auto-suspend; daily monitoring via `ACCOUNT_USAGE`; budget alerts at $100/$200/$250 |
+| Snowflake compute cost overrun | High | Medium | XS warehouse; 60-second auto-suspend; daily monitoring via `ACCOUNT_USAGE`; Redis caching to reduce query volume |
 | API cost overrun (OpenAI/Claude) | Medium | Medium | GPT-4o-mini for high-volume tasks; prompt caching; embedding batch processing; daily token budget caps |
-| 22-day timeline too aggressive | High | High | Parallel milestone execution; MVP-first (core pipeline + 3 agents first, add 2 more if time permits); daily standups |
+| 22-day timeline too aggressive | High | High | Parallel milestone execution; MVP-first (core pipeline + 3 agents, add 2 more if time permits); daily standups |
 | ACLED API access delay | Low | Medium | Register immediately; fallback to HDX pre-aggregated CSV from [data.humdata.org](https://data.humdata.org/organization/acled) |
-| Weather API rate limits | Low | Low | Cache hourly; only poll for 20 chokepoint regions, not global |
+| Weather API rate limits | Low | Low | Cache hourly results in Redis; only poll for 20 chokepoint regions, not global |
 
 ---
 
@@ -580,15 +598,16 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 | Total data processed | ≥ 50 GB | Snowflake storage + query volume |
 | Agent accuracy (golden set) | ≥ 4.0 / 5.0 | LLM-as-judge rubric |
 | End-to-end query latency | < 30 seconds | LangSmith P95 |
+| Redis cache hit rate | ≥ 70% | Redis `INFO stats` |
 | Sanctions screening precision | ≥ 90% | Manual review of top-50 |
 | Dashboard load time | < 3 seconds | Streamlit profiling |
 | Test coverage | ≥ 80% | pytest-cov |
 | Total LLM cost | < $50 project lifecycle | LangSmith cost dashboard |
 
 ### 9.2 Expected Benefits
-- **Technical Value:** Demonstrates end-to-end implementation of a production-grade agentic AI system on real maritime big data—from streaming ingest through multi-agent reasoning (MCP + LangGraph) to interactive geospatial visualization. This is a portfolio-differentiating project showcasing data engineering, LLM orchestration, and cloud architecture skills.
+- **Technical Value:** Demonstrates end-to-end implementation of a production-grade agentic AI system on real maritime big data—from streaming ingest through multi-agent reasoning (MCP + LangGraph + Redis caching) to interactive geospatial visualization. This is a portfolio-differentiating project showcasing data engineering, LLM orchestration, and cloud architecture skills.
 - **Business Value:** A maritime risk intelligence platform of this type could save logistics companies $50K–$500K per disruption through proactive rerouting. The insurance industry spends $3B+ annually on marine war-risk premiums—automated, AI-driven assessment directly addresses this market.
-- **Academic Value:** Bridges big data engineering and agentic AI—two of the most important trends for 2025–2030. Addresses the data-heavy requirement while pushing the boundary on LLM integration with novel libraries (MovingPandas, ArkSim, Kepler.gl, PyGWalker).
+- **Academic Value:** Bridges big data engineering and agentic AI—two of the most important trends for 2025–2030. Addresses the data-heavy requirement while pushing the boundary on LLM integration with novel open-source libraries (MovingPandas, ArkSim, Kepler.gl, PyGWalker).
 
 ---
 
@@ -601,6 +620,7 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 | OpenAI Embeddings (text-embedding-3-small) | ~50M tokens | $0.02/1M tokens | ~$1.00 |
 | OpenAI GPT-4o-mini | ~10M tokens | $0.15/1M input, $0.60/1M output | ~$5.00 |
 | Claude Sonnet (reasoning agents) | ~5M tokens | $3/1M input, $15/1M output | ~$20.00 |
+| Redis (Docker, self-hosted) | Runs on EC2 | No additional cost | $0 |
 | GDELT BigQuery | ~500 GB queried | Free first 1TB/month | $0 |
 | aisstream.io | Unlimited | Free tier | $0 |
 | ACLED API | Academic access | Free | $0 |
@@ -608,12 +628,12 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 | **Total** | | | **~$227** |
 
 ### Cost Optimization Strategies
+- **Redis Caching:** Gold query results and MCP tool responses cached in Redis (5-min / 2-min TTL respectively), reducing Snowflake compute by an estimated 40–60% during active dashboard usage and agent queries
 - **Prompt Caching:** Cache repeated system prompts and few-shot examples (~30% token savings on Claude)
 - **Tiered Model Selection:** GPT-4o-mini ($0.15/1M) for high-volume classification; Claude Sonnet ($3/1M) only for complex reasoning
 - **Embedding Batching:** Batch embed 100 documents per API call to minimize overhead
-- **Snowflake Auto-Suspend:** XS warehouse with 60-second auto-suspend; suspend overnight via Airflow
-- **Query Result Caching:** FastAPI response cache with 5-minute TTL for Gold table queries
-- **Daily Budget Monitoring:** Script checks `ACCOUNT_USAGE` views; hard cap at $50 LLM spend
+- **Snowflake Auto-Suspend:** XS warehouse with 60-second auto-suspend; suspend overnight via Airflow DAG
+- **Daily Budget Monitoring:** Script checks Snowflake `ACCOUNT_USAGE` views + LangSmith token reports; alerts at predefined thresholds
 
 ---
 
@@ -621,9 +641,9 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 
 Maritime AI Sentinel addresses one of the most consequential challenges in global trade: the inability to rapidly assess and respond to geopolitical disruptions affecting maritime supply chains. By fusing real-time AIS vessel tracking with GDELT geopolitical events, ACLED conflict data, OFAC sanctions intelligence, and weather alerts across 7 data sources totaling 50+ GB, this project creates a comprehensive maritime risk intelligence platform.
 
-The technical architecture—Snowflake-centric big data processing, LangGraph multi-agent reasoning with MCP tool protocol, and Kepler.gl interactive visualization—demonstrates mastery of the core DAMG 7245 competencies: big data engineering, significant LLM use, cloud-native architecture, and user-facing application design. The integration of novel open-source libraries (MovingPandas for trajectory analytics, ArkSim for agent stress-testing, PyGWalker for interactive EDA) differentiates this from standard approaches.
+The technical architecture—Snowflake-centric big data processing with Redis caching, LangGraph multi-agent reasoning with MCP tool protocol, and Kepler.gl interactive visualization—demonstrates mastery of the core DAMG 7245 competencies: big data engineering, significant LLM use, cloud-native architecture, and user-facing application design. The integration of novel open-source libraries (MovingPandas for trajectory analytics, ArkSim for agent stress-testing, PyGWalker for interactive EDA) differentiates this project from standard approaches.
 
-With a clear 22-day execution plan, proven architectural patterns from our PE Org-AI-R platform (CS1–CS5), and a realistic $227 cost budget within available Snowflake credits and API keys, this project is designed for practical implementation and successful delivery by April 24, 2026.
+With a clear 22-day execution plan and a realistic cost budget within available Snowflake credits and API keys, this project is designed for practical implementation and successful delivery by April 24, 2026.
 
 ---
 
@@ -646,6 +666,7 @@ With a clear 22-day execution plan, proven architectural patterns from our PE Or
 - LangSmith — LLM observability: https://www.langchain.com/langsmith
 - Anthropic MCP — Model Context Protocol: https://modelcontextprotocol.io/
 - ChromaDB — Vector database: https://www.trychroma.com/
+- Redis — In-memory cache: https://redis.io/
 - MovingPandas — Trajectory analytics: https://movingpandas.github.io/movingpandas/
 - ArkSim (Arklex AI) — Agent testing framework: https://github.com/arklexai/Agent-First-Organization
 - Kepler.gl — GPU-rendered geospatial visualization: https://kepler.gl/
@@ -657,8 +678,8 @@ With a clear 22-day execution plan, proven architectural patterns from our PE Or
 
 ### Industry References
 - UNCTAD Review of Maritime Transport 2024: https://unctad.org/publication/review-maritime-transport-2024
-- Everstream Analytics — 2026 Supply Chain Risk Report
-- BCG — Agentic AI Value Projections (17% → 29% by 2028)
+- Everstream Analytics — 2026 Supply Chain Risk Report: https://www.everstream.ai/
+- BCG — Agentic AI Value Projections (17% → 29% by 2028): https://www.bcg.com/
 - LangChain State of Agent Engineering (2025 Survey, 1,340 respondents): https://www.langchain.com/state-of-agent-engineering
 - Google A2A Protocol: https://a2a-protocol.org/ | [GitHub](https://github.com/a2aproject/A2A)
 
@@ -788,6 +809,7 @@ If risk_level > 75, set requires_hitl = true.
 | `fastapi` | Custom (`./api`) | 8000 | REST API backend |
 | `streamlit` | Custom (`./dashboard`) | 8501 | Frontend dashboard |
 | `chromadb` | `chromadb/chroma:latest` | 8200 | Vector store |
+| `redis` | `redis:7-alpine` | 6379 | Caching layer |
 | `airflow-webserver` | `apache/airflow:2.8.1` | 8080 | DAG UI |
 | `airflow-scheduler` | `apache/airflow:2.8.1` | — | DAG execution |
 | `ais-consumer` | Custom (`./ingestion`) | — | WebSocket AIS consumer |
