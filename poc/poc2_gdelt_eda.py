@@ -12,6 +12,7 @@ Usage:
 """
 
 import sys
+import time
 from datetime import datetime, timedelta
 
 print("🚢 Maritime AI Sentinel — POC 2: GDELT Geopolitical EDA")
@@ -26,54 +27,44 @@ except ImportError:
 
 # ── Configuration ──
 MARITIME_KEYWORDS = [
-    "shipping route",
-    "maritime security",
+    "shipping route disruption",
     "strait of hormuz",
-    "suez canal",
-    "red sea shipping",
-    "naval blockade",
-    "port congestion",
-    "houthi attack ship",
     "maritime chokepoint",
-    "vessel sanctions",
+    "red sea attack",
+    "suez canal shipping",
+    "naval blockade",
+    "port congestion delay",
+    "houthi ship attack",
+    "vessel sanctions OFAC",
+    "maritime security threat",
 ]
 
-# GDELT Doc API supports last 3 months of data
 END_DATE = datetime.now()
 START_DATE = END_DATE - timedelta(days=30)
 
 
-def query_gdelt(keyword: str, max_records: int = 250) -> pd.DataFrame:
-    """Query GDELT Doc API for articles matching a keyword."""
-    f = Filters(
-        keyword=keyword,
-        start_date=START_DATE.strftime("%Y-%m-%d"),
-        end_date=END_DATE.strftime("%Y-%m-%d"),
-        num_records=max_records,
-    )
+def query_gdelt_with_retry(keyword: str, max_records: int = 250, retries: int = 2) -> pd.DataFrame:
+    """Query GDELT Doc API with retry logic and delay between calls."""
     gd = GdeltDoc()
-    try:
-        articles = gd.article_search(f)
-        return articles
-    except Exception as e:
-        print(f"  ⚠️ Query failed for '{keyword}': {e}")
-        return pd.DataFrame()
-
-
-def query_gdelt_timeline(keyword: str) -> pd.DataFrame:
-    """Query GDELT Doc API for article volume timeline."""
-    f = Filters(
-        keyword=keyword,
-        start_date=START_DATE.strftime("%Y-%m-%d"),
-        end_date=END_DATE.strftime("%Y-%m-%d"),
-    )
-    gd = GdeltDoc()
-    try:
-        timeline = gd.timeline_search("timelinevol", f)
-        return timeline
-    except Exception as e:
-        print(f"  ⚠️ Timeline query failed for '{keyword}': {e}")
-        return pd.DataFrame()
+    for attempt in range(retries + 1):
+        try:
+            f = Filters(
+                keyword=keyword,
+                start_date=START_DATE.strftime("%Y-%m-%d"),
+                end_date=END_DATE.strftime("%Y-%m-%d"),
+                num_records=max_records,
+            )
+            articles = gd.article_search(f)
+            return articles
+        except Exception as e:
+            if attempt < retries:
+                wait = 3 * (attempt + 1)
+                print(f" (retry in {wait}s)...", end="", flush=True)
+                time.sleep(wait)
+            else:
+                print(f" ⚠️ Failed: {str(e)[:60]}", end="")
+                return pd.DataFrame()
+    return pd.DataFrame()
 
 
 def main():
@@ -83,14 +74,20 @@ def main():
     print(f"\n📡 Querying GDELT Doc API for maritime events...")
     print(f"   Date range: {START_DATE.strftime('%Y-%m-%d')} to {END_DATE.strftime('%Y-%m-%d')}")
     print(f"   Keywords: {len(MARITIME_KEYWORDS)}")
+    print(f"   Retry: up to 2 retries per keyword with backoff")
     print()
 
     all_articles = []
     keyword_counts = {}
 
-    for keyword in MARITIME_KEYWORDS:
-        print(f"  🔍 Querying: '{keyword}'...", end=" ")
-        df = query_gdelt(keyword, max_records=250)
+    for i, keyword in enumerate(MARITIME_KEYWORDS):
+        print(f"  🔍 [{i + 1}/{len(MARITIME_KEYWORDS)}] '{keyword}'...", end=" ", flush=True)
+
+        # Delay between requests to avoid GDELT throttling
+        if i > 0:
+            time.sleep(2)
+
+        df = query_gdelt_with_retry(keyword, max_records=250)
         count = len(df)
         keyword_counts[keyword] = count
         if count > 0:
@@ -116,15 +113,16 @@ def main():
     # 2. Basic statistics
     # ═══════════════════════════════════════════
     print(f"\n── Dataset Overview ──")
-    print(f"  Total articles (raw):        {total_before_dedup}")
+    print(f"  Total articles (raw):          {total_before_dedup}")
     print(f"  Total articles (deduplicated): {total_after_dedup}")
-    print(f"  Unique domains:              {df_all['domain'].nunique() if 'domain' in df_all.columns else 'N/A'}")
+    print(f"  Unique domains:                {df_all['domain'].nunique() if 'domain' in df_all.columns else 'N/A'}")
+    print(f"  Keywords with results:         {sum(1 for c in keyword_counts.values() if c > 0)}/{len(MARITIME_KEYWORDS)}")
 
     if "seendate" in df_all.columns:
         df_all["date"] = pd.to_datetime(df_all["seendate"], format="%Y%m%dT%H%M%S", errors="coerce")
         date_range = df_all["date"].dropna()
         if len(date_range) > 0:
-            print(f"  Date range:                  {date_range.min().strftime('%Y-%m-%d')} to {date_range.max().strftime('%Y-%m-%d')}")
+            print(f"  Date range:                    {date_range.min().strftime('%Y-%m-%d')} to {date_range.max().strftime('%Y-%m-%d')}")
 
     # ═══════════════════════════════════════════
     # 3. Articles per keyword
@@ -132,7 +130,7 @@ def main():
     print(f"\n── Articles per Keyword ──")
     sorted_keywords = sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)
     for keyword, count in sorted_keywords:
-        bar = "█" * (count // 10) if count > 0 else ""
+        bar = "█" * (count // 10) if count > 0 else "░"
         print(f"  {keyword:<30s} {count:>4d}  {bar}")
 
     # ═══════════════════════════════════════════
@@ -163,23 +161,7 @@ def main():
             print(f"  {lang:<20s} {count:>4d}")
 
     # ═══════════════════════════════════════════
-    # 7. Tone analysis (if available)
-    # ═══════════════════════════════════════════
-    print(f"\n── Volume Timeline (Red Sea Shipping) ──")
-    timeline = query_gdelt_timeline("red sea shipping")
-    if not timeline.empty:
-        print(f"  Timeline data points: {len(timeline)}")
-        print(f"  Columns: {list(timeline.columns)}")
-        if len(timeline.columns) >= 2:
-            # Show last 10 data points
-            print(f"\n  Recent volume (last 10 periods):")
-            for _, row in timeline.tail(10).iterrows():
-                date_val = row.iloc[0] if not pd.isna(row.iloc[0]) else "N/A"
-                vol_val = row.iloc[1] if len(row) > 1 else "N/A"
-                print(f"    {date_val}  volume: {vol_val}")
-
-    # ═══════════════════════════════════════════
-    # 8. Sample articles
+    # 7. Sample articles
     # ═══════════════════════════════════════════
     print(f"\n── Sample Articles (first 10) ──")
     sample_cols = ["title", "domain", "seendate"]
@@ -192,18 +174,17 @@ def main():
             print(f"  [{date}] {domain:<25s} {title}")
 
     # ═══════════════════════════════════════════
-    # 9. Data volume estimation
+    # 8. Data volume estimation
     # ═══════════════════════════════════════════
     memory_mb = df_all.memory_usage(deep=True).sum() / (1024 * 1024)
     print(f"\n── Data Volume ──")
     print(f"  DataFrame memory:    {memory_mb:.2f} MB ({total_after_dedup} articles)")
     print(f"  Columns:             {list(df_all.columns)}")
-    estimated_monthly = total_after_dedup * (30 / 30)  # extrapolate
-    print(f"  Est. monthly volume: ~{estimated_monthly:.0f} articles for maritime keywords")
-    print(f"  Note: GDELT Events DB + GKG is ~550 MB/day = ~16.5 GB/month at full scale")
+    print(f"  Note: This is the Doc API (article metadata only).")
+    print(f"  Full pipeline uses GDELT Events + GKG via BigQuery = ~550 MB/day")
 
     # ═══════════════════════════════════════════
-    # 10. Save to CSV for further analysis
+    # 9. Save to CSV for further analysis
     # ═══════════════════════════════════════════
     output_path = "poc/gdelt_maritime_articles.csv"
     df_all.to_csv(output_path, index=False)
