@@ -1,0 +1,14 @@
+# AIS WebSocket streaming consumer
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install poetry && poetry config virtualenvs.create false
+
+COPY pyproject.toml ./
+RUN poetry install --no-root --no-interaction --no-ansi --without dev
+
+COPY src/ ./src/
+COPY ingestion/ ./ingestion/
+
+CMD ["python", "-m", "ingestion.ais_consumer"]

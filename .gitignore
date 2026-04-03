@@ -1,0 +1,51 @@
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual Environment ──
+.venv/
+
+# ── Environment ──
+.env
+.env.local
+.env.*.local
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Testing ──
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# ── Airflow ──
+airflow/logs/
+airflow/airflow.db
+airflow/airflow.cfg
+
+# ── Data (don't commit large data files) ──
+data/raw/
+data/processed/
+*.csv
+*.parquet
+!data/seed/*.json
+
+# ── Docker ──
+*.log
+
+# ── Notebooks ──
+.ipynb_checkpoints/
+
+# ── Credentials ──
+service-account.json

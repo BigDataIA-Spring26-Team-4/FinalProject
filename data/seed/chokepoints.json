@@ -1,0 +1,82 @@
+[
+  {
+    "chokepoint_id": "hormuz",
+    "name": "Strait of Hormuz",
+    "region": "middle_east",
+    "bbox": {"lat_min": 25.5, "lon_min": 55.5, "lat_max": 27.0, "lon_max": 57.5},
+    "pct_global_trade": 21.0,
+    "description": "Connects Persian Gulf to Gulf of Oman. ~21% of global oil transit."
+  },
+  {
+    "chokepoint_id": "malacca",
+    "name": "Strait of Malacca",
+    "region": "southeast_asia",
+    "bbox": {"lat_min": 0.5, "lon_min": 100.0, "lat_max": 4.0, "lon_max": 104.5},
+    "pct_global_trade": 25.0,
+    "description": "Connects Indian Ocean to South China Sea. ~25% of global trade."
+  },
+  {
+    "chokepoint_id": "suez",
+    "name": "Suez Canal",
+    "region": "middle_east",
+    "bbox": {"lat_min": 29.5, "lon_min": 32.0, "lat_max": 31.5, "lon_max": 33.5},
+    "pct_global_trade": 12.0,
+    "description": "Connects Mediterranean to Red Sea. ~12% of global trade."
+  },
+  {
+    "chokepoint_id": "bab_el_mandeb",
+    "name": "Bab el-Mandeb",
+    "region": "middle_east",
+    "bbox": {"lat_min": 12.0, "lon_min": 43.0, "lat_max": 13.5, "lon_max": 44.0},
+    "pct_global_trade": 9.0,
+    "description": "Connects Red Sea to Gulf of Aden. ~9% of global trade."
+  },
+  {
+    "chokepoint_id": "panama",
+    "name": "Panama Canal",
+    "region": "central_america",
+    "bbox": {"lat_min": 8.5, "lon_min": -80.0, "lat_max": 9.5, "lon_max": -79.0},
+    "pct_global_trade": 5.0,
+    "description": "Connects Atlantic to Pacific. ~5% of global trade."
+  },
+  {
+    "chokepoint_id": "taiwan",
+    "name": "Taiwan Strait",
+    "region": "east_asia",
+    "bbox": {"lat_min": 23.0, "lon_min": 117.0, "lat_max": 26.0, "lon_max": 121.0},
+    "pct_global_trade": 88.0,
+    "description": "Between Taiwan and mainland China. ~88% of largest container ships transit."
+  },
+  {
+    "chokepoint_id": "danish_straits",
+    "name": "Danish Straits",
+    "region": "northern_europe",
+    "bbox": {"lat_min": 54.5, "lon_min": 9.5, "lat_max": 58.0, "lon_max": 13.0},
+    "pct_global_trade": 0.0,
+    "description": "Access to Baltic Sea. Key for Russian/Nordic trade."
+  },
+  {
+    "chokepoint_id": "gibraltar",
+    "name": "Strait of Gibraltar",
+    "region": "mediterranean",
+    "bbox": {"lat_min": 35.5, "lon_min": -6.0, "lat_max": 36.5, "lon_max": -5.0},
+    "pct_global_trade": 0.0,
+    "description": "Connects Atlantic to Mediterranean."
+  },
+  {
+    "chokepoint_id": "good_hope",
+    "name": "Cape of Good Hope",
+    "region": "southern_africa",
+    "bbox": {"lat_min": -35.0, "lon_min": 17.0, "lat_max": -33.5, "lon_max": 19.5},
+    "pct_global_trade": 0.0,
+    "description": "Southern tip of Africa. Alternative to Suez Canal."
+  },
+  {
+    "chokepoint_id": "turkish_straits",
+    "name": "Turkish Straits (Bosphorus + Dardanelles)",
+    "region": "middle_east",
+    "bbox": {"lat_min": 40.0, "lon_min": 26.0, "lat_max": 41.5, "lon_max": 29.5},
+    "pct_global_trade": 0.0,
+    "description": "Connects Black Sea to Mediterranean. Key for grain exports."
+  }
+]

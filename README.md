@@ -34,7 +34,7 @@ This project addresses that gap by building **Maritime AI Sentinel**—a cloud-n
 ### 2.2 Objective
 The primary goals of this project are:
 
-- **Big Data Engineering:** Ingest, process, and store 50+ GB of multi-source maritime and geopolitical data in Snowflake using Airflow-orchestrated batch and near-real-time pipelines with a medallion architecture (Bronze/Silver/Gold).
+- **Big Data Engineering:** Ingest, process, and store 60+ GB of multi-source maritime and geopolitical data in Snowflake using Airflow-orchestrated batch and near-real-time pipelines with a medallion architecture (Bronze/Silver/Gold).
 
 - **Significant LLM Use:** Deploy a LangGraph multi-agent system with 5 specialist agents (vessel tracker, news analyst, conflict monitor, sanctions checker, weather analyst) using Claude and OpenAI models with RAG over vector-embedded evidence, connected via MCP tool protocol.
 
@@ -49,7 +49,7 @@ The primary goals of this project are:
 ### 3.1 Scope
 
 #### In Scope
-- **Data Sources (7 sources)**
+- **Data Sources (7 external sources + 1 application-defined reference dataset)**
   - [aisstream.io](https://aisstream.io) — Real-time vessel locations streamed via WebSocket
   - [GDELT 2.0](https://www.gdeltproject.org) — Global news event database (Events + GKG), updates every 15 min
   - [ACLED](https://acleddata.com) — Conflict event monitoring, weekly updates + forecasts (CAST)
@@ -57,6 +57,7 @@ The primary goals of this project are:
   - [The Weather Company API](https://developer.weather.com/docs) — Global severe weather alerts, hourly refresh
   - [World Port Index](https://data.humdata.org/dataset/world-port-index) — 3,600+ port locations and characteristics
   - [Natural Earth Coastlines](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/) — GeoJSON global coastlines
+  - **Chokepoint Reference Data** (application-defined) — Bounding boxes, names, and trade percentages for 10 critical maritime straits, manually curated from published maritime geography (see Appendix A)
 
 - **ETL Pipelines**
   - Apache Airflow DAGs for all batch sources (GDELT, ACLED, OFAC, Weather, Ports, Coastlines)
@@ -66,7 +67,7 @@ The primary goals of this project are:
 
 - **LLM Components**
   - LangGraph supervisor agent orchestrating 5 specialist agents
-  - MCP server exposing maritime data tools (chokepoint status, vessel lookup, sanctions screen, etc.)
+  - MCP server exposing maritime data tools (chokepoint risk, vessel lookup, sanctions screen, semantic search, etc.)
   - RAG pipeline: OpenAI embeddings → ChromaDB vector store → context retrieval into agent prompts
   - Human-in-the-Loop (HITL) gates for high-risk alerts (risk score > 75)
 
@@ -132,18 +133,18 @@ The primary goals of this project are:
 
 | Source | Type / Format | Access Method | Volume (est.) | Refresh Cadence |
 |---|---|---|---|---|
-| **aisstream.io** | AIS vessel positions (JSON) | Free WebSocket API (API key) | ~500 MB/day filtered to 20 chokepoints | Real-time streaming |
-| **GDELT 2.0 Events** | Geopolitical events (CAMEO coded, CSV) | BigQuery (free 1TB/mo) + gdeltPyR | 50 MB/day × 90 days = **4.5 GB** | Every 15 minutes |
-| **GDELT 2.0 GKG** | Global Knowledge Graph (themes, tone, entities) | BigQuery + CSV download | 500 MB/day × 90 days = **45 GB** | Every 15 minutes |
+| **aisstream.io** | AIS vessel positions (JSON) | Free WebSocket API (API key) | ~500 MB/day × 22 days = **~11 GB** | Real-time streaming |
+| **GDELT 2.0 Events** | Geopolitical events — structured rows with CAMEO codes, actors, locations (CSV) | BigQuery (free 1TB/mo) + gdeltPyR | 50 MB/day × 90 days = **4.5 GB** | Every 15 minutes |
+| **GDELT 2.0 GKG** | Global Knowledge Graph — article-level themes, tone scores, entities, source URLs (CSV) | BigQuery + CSV download | 500 MB/day × 90 days = **45 GB** | Every 15 minutes |
 | **ACLED** | Conflict events (CSV/JSON) | REST API (free academic registration) | ~50 MB for 1997–present archive | Weekly (Tuesdays) |
 | **US OFAC (OpenSanctions)** | Sanctions entities + vessels (JSON) | Bulk download (free non-commercial) | ~5 MB (maritime subset) | Daily |
 | **Weather Company API** | Severe weather alerts (JSON) | REST API (freemium) | ~300 MB/month (global severe alerts) | Hourly |
 | **World Port Index** | Port metadata + coordinates (CSV) | HDX download | ~70 MB (static) | Annual |
 | **Natural Earth Coastlines** | Coastline boundaries (GeoJSON) | Direct download | ~10 MB (static) | Static |
 
-**Total Expected Volume: ~52 GB** (primarily driven by 90-day GDELT GKG backfill)
+**Total Expected Volume: ~61 GB** (GDELT GKG backfill: 45 GB + AIS streaming: 11 GB + GDELT Events: 4.5 GB + remaining sources: ~0.5 GB)
 
-> **Justification of scale:** GDELT's Global Knowledge Graph alone at 500MB/day provides the big-data backbone. Combined with streaming AIS data (continuous WebSocket feed), this project processes genuinely large-scale, heterogeneous data across 7 sources—satisfying the data-heavy requirement.
+> **Why two GDELT tables?** The Events DB and GKG serve fundamentally different roles in the architecture. **GDELT Events** provides structured, coded rows (who did what to whom, where, when, CAMEO event code) — these go into Snowflake Silver/Gold tables for structured SQL queries like *"count all military actions within 100km of the Suez Canal in the last 7 days."* **GDELT GKG** provides article-level text data (themes, tone, entities, source URLs) — this text is what gets embedded into ChromaDB for semantic search (RAG), enabling agents to answer open-ended questions like *"what is the current geopolitical sentiment around Strait of Hormuz?"* Without Events, there are no structured aggregates to query. Without GKG, there is no text corpus to embed for RAG. They feed different layers of the system.
 
 ### 5.2 Technology Stack
 
@@ -155,7 +156,7 @@ The primary goals of this project are:
 | **Compute / Processing** | Snowflake SQL + Snowpark Python UDFs | Process data where it lives. Snowpark for feature engineering within the warehouse. Chosen over Spark/EMR (additional infra cost and operational overhead). |
 | **LLM Providers** | Claude Sonnet + OpenAI GPT-4o-mini | Claude for complex reasoning agents; GPT-4o-mini for high-volume classification. Dual-provider for cost optimization + resilience. |
 | **Embeddings** | OpenAI text-embedding-3-small (1536d) | Best cost/quality ratio at $0.02/1M tokens. Chosen over Cohere (fewer integrations) and local models (GPU-limited). |
-| **Vector Store** | ChromaDB (self-hosted Docker) | Zero-cost, persistent, good Python integration. Chosen over Pinecone (paid) and Weaviate (heavier infra). |
+| **Vector Store** | ChromaDB (self-hosted Docker) | Semantic search over unstructured text (news articles, sanctions descriptions) that cannot be queried via SQL. Zero-cost, persistent, good Python integration. Chosen over Pinecone (paid) and Weaviate (heavier infra). |
 | **Caching** | Redis (Docker) | In-memory cache for Snowflake Gold query results, MCP tool responses, and embedding lookups. Reduces Snowflake compute costs and agent response latency. Chosen over Memcached (less feature-rich, no persistence). |
 | **Agentic Framework** | LangGraph | Graph-based stateful multi-agent orchestration with HITL gates, conditional branching, and LangSmith observability. Chosen over CrewAI (less control over graph topology) and AutoGen (less production-ready). |
 | **Tool Protocol** | MCP (Model Context Protocol) | Exposes maritime data as structured tools for agents (get_chokepoint_risk, screen_vessel, etc.). Standardized JSON-RPC protocol for agent ↔ tool communication. |
@@ -230,11 +231,11 @@ graph TB
 
         subgraph VECTOR["Vector Pipeline"]
             EMB["Embedding Pipeline\nOpenAI text-embedding-3-small"]
-            CHROMA["ChromaDB\nVector Store"]
+            CHROMA["ChromaDB\nSemantic search over\narticle text + sanctions"]
         end
 
         subgraph MCP_SRV["MCP Server"]
-            TOOLS["Maritime Tools\nget_chokepoint_risk\nscreen_vessel_sanctions\nquery_vessel_positions\nget_weather_alerts\nget_conflict_events\nget_port_info"]
+            TOOLS["Maritime Tools\nget_chokepoint_risk\nscreen_vessel_sanctions\nquery_vessel_positions\nget_weather_alerts\nget_conflict_events\nget_port_info\nsearch_geopolitical_events"]
         end
 
         subgraph AGENTS["LangGraph Agent System"]
@@ -273,7 +274,7 @@ graph TB
     BRONZE --> SILVER
     SILVER --> GOLD
 
-    SILVER -->|"articles + sanctions"| EMB
+    SILVER -->|"GKG text + sanctions descriptions"| EMB
     EMB --> CHROMA
 
     GOLD --> REDIS
@@ -327,12 +328,12 @@ flowchart TD
     subgraph EMBED["Embedding Pipeline"]
         direction LR
         EMBED_GEN["OpenAI\ntext-embedding-3-small"]
-        CHROMA_DB["ChromaDB\n~50K–100K documents"]
+        CHROMA_DB["ChromaDB\nSemantic search\n~50K–100K documents"]
     end
 
     subgraph AGENT["Agent Layer — LangGraph + MCP"]
         direction TB
-        MCP_TOOLS["MCP Server\n6 maritime tools"]
+        MCP_TOOLS["MCP Server\n7 maritime tools"]
         SUP["Supervisor Agent\nRoutes queries & merges results"]
         AG1["Vessel Tracker\nPositions, routes, ETAs"]
         AG2["News Analyst\nGDELT event signals"]
@@ -359,7 +360,7 @@ flowchart TD
     BR -->|"validate, deduplicate, type-cast"| SL
     SL -->|"aggregate, enrich, score"| GL
 
-    SL -->|"articles + sanctions text"| EMBED_GEN
+    SL -->|"GKG article text + sanctions descriptions"| EMBED_GEN
     EMBED_GEN --> CHROMA_DB
 
     GL --> RD
@@ -380,31 +381,52 @@ flowchart TD
 
 ### 5.4 Data Processing & Transformation
 
+#### Dual-Store Architecture: Snowflake + ChromaDB
+
+This project uses two complementary data stores because the data is both structured and unstructured:
+
+- **Snowflake** handles all structured, numeric, and relational data — vessel positions, CAMEO-coded event records, conflict statistics, risk score aggregates, port metadata. These are queried via standard SQL (e.g., *"count military events within 100km of Suez in the last 7 days"*).
+- **ChromaDB** handles unstructured text that requires semantic search — GDELT GKG article summaries, ACLED event narratives, OFAC sanctions descriptions. These cannot be meaningfully queried with SQL; instead, agents use vector similarity search to find contextually relevant documents (e.g., *"find recent reporting similar to the 2024 Red Sea shipping crisis"*).
+
+This split is why the project ingests both GDELT Events (structured → Snowflake) and GDELT GKG (text → ChromaDB). Each feeds a different layer of the architecture. Agents access both stores through the MCP server — structured tools query Snowflake via Redis cache, while `search_geopolitical_events` performs vector search against ChromaDB.
+
 #### Batch Processing (Airflow DAGs)
-- **GDELT DAG** (runs every 15 minutes): Queries BigQuery for maritime-relevant events using CAMEO event codes (military actions, sanctions, blockades, naval activity). Downloads both Events 2.0 and GKG tables. Loads raw CSV into Snowflake Bronze via `COPY INTO` from staged files.
-- **ACLED DAG** (runs weekly, Tuesdays): Fetches conflict events via REST API, filters for coastal/port-adjacent events within 50km of known ports. Writes to Bronze.
-- **OFAC DAG** (runs daily): Downloads OpenSanctions OFAC consolidated dataset (JSON), parses for maritime-related entities (vessels, shipping companies). Upserts into Bronze with change detection.
-- **Weather DAG** (runs hourly): Pulls severe weather alerts from Weather Company API for 20 predefined chokepoint regions. Filters for storms/cyclones affecting shipping lanes. Writes to Bronze.
-- **Static data DAG** (runs once + monthly refresh): Loads World Port Index and Natural Earth coastlines into Bronze.
+- **GDELT DAG** (runs every 15 minutes): Queries BigQuery for maritime-relevant events using CAMEO event codes (military actions, sanctions, blockades, naval activity). Downloads Events 2.0 rows into Snowflake Bronze for structured storage. Downloads GKG records and routes article-level text through the embedding pipeline into ChromaDB for semantic search.
+- **ACLED DAG** (runs weekly, Tuesdays): Fetches conflict events via REST API, filters for coastal/port-adjacent events within 50km of known ports. Structured fields go to Snowflake Bronze; event description text is embedded into ChromaDB.
+- **OFAC DAG** (runs daily): Downloads OpenSanctions OFAC consolidated dataset (JSON), parses for maritime-related entities (vessels, shipping companies). Structured entity records go to Snowflake Bronze; entity description text is embedded into ChromaDB for semantic sanctions screening.
+- **Weather DAG** (runs hourly): Pulls severe weather alerts from Weather Company API for the 10 chokepoint regions defined in `dim_chokepoints`. Filters for storms/cyclones affecting shipping lanes. Writes to Snowflake Bronze.
+- **Static data DAG** (runs once + monthly refresh): Loads World Port Index, Natural Earth coastlines, and the chokepoint reference data seed into Snowflake Bronze.
 
 #### Stream Processing
-- **AIS Consumer**: Python `asyncio` + `websockets` client connects to aisstream.io. Filters incoming positions by 20 predefined chokepoint bounding boxes (Suez, Hormuz, Malacca, Panama, Bab el-Mandeb, Taiwan Strait, etc.). Batches 1,000 positions, writes to Snowflake via staged CSV upload every 60 seconds.
+- **AIS Consumer**: Python `asyncio` + `websockets` client connects to aisstream.io. Filters incoming positions by the bounding boxes defined in `dim_chokepoints` (Suez, Hormuz, Malacca, Panama, Bab el-Mandeb, Taiwan Strait, etc.). Batches 1,000 positions, writes to Snowflake via staged CSV upload every 60 seconds.
 - **MovingPandas Processing**: Silver-layer Snowpark UDF applies MovingPandas trajectory analysis on batched AIS positions — computing stop detection (vessels stationary > 2 hours near ports), transit time through chokepoints, and speed anomalies that may indicate distress or evasion.
+
+#### Chokepoint Reference Data
+
+Chokepoints are **application-defined reference data**, not sourced from any external API. We manually curate a seed dataset of 10 critical maritime straits (see Appendix A) with the following attributes per chokepoint: name, lat/lon bounding box coordinates, region label, and approximate percentage of global trade. This seed data is loaded into `dim_chokepoints` at initialization and serves as the geographic filter applied across the entire system:
+- AIS positions are filtered to vessels within these bounding boxes
+- GDELT/ACLED events are geo-tagged to the nearest chokepoint based on lat/lon proximity
+- Weather alerts are pulled specifically for these regions
+- Gold-layer risk scores are computed per chokepoint
+
+The bounding box coordinates and trade percentages are derived from published maritime geography sources including the U.S. Energy Information Administration (chokepoint analysis), UNCTAD Review of Maritime Transport, and the International Chamber of Shipping.
 
 #### Data Formats & Storage Schemas
 - **Bronze**: Raw JSON/CSV stored as Snowflake `VARIANT` columns (semi-structured). No transformation — exact mirror of source data.
 - **Silver**: Typed, deduplicated tables with consistent schemas:
   - `silver_vessel_positions` (mmsi, lat, lon, speed, heading, timestamp, chokepoint_id)
-  - `silver_geopolitical_events` (event_id, cameo_code, actor1, actor2, lat, lon, tone, source_url, timestamp)
+  - `silver_geopolitical_events` (event_id, cameo_code, actor1, actor2, lat, lon, tone, source_url, timestamp) — *from GDELT Events DB*
   - `silver_conflict_events` (acled_id, event_type, fatalities, country, lat, lon, date)
   - `silver_sanctions_entities` (entity_id, name, entity_type, program, vessel_imo, vessel_mmsi)
   - `silver_weather_alerts` (alert_id, severity, event_type, lat, lon, radius_km, valid_until)
-  - `dim_ports` (port_id, name, country, lat, lon, max_draft, harbor_type)
-  - `dim_chokepoints` (chokepoint_id, name, bbox_coords, region, pct_global_trade)
+  - `dim_ports` (port_id, name, country, lat, lon, max_draft, harbor_type) — *from World Port Index*
+  - `dim_chokepoints` (chokepoint_id, name, bbox_coords, region, pct_global_trade) — *application-defined seed data*
 - **Gold**: Materialized views and aggregated tables:
   - `gold_chokepoint_risk_score` — daily composite risk per chokepoint (geopolitical + weather + congestion)
   - `gold_vessel_risk_profile` — per-vessel sanctions probability + route risk
   - `gold_transit_analytics` — average transit times, delays, throughput per chokepoint
+- **ChromaDB**: Embedded unstructured text — *from GDELT GKG, ACLED descriptions, OFAC entity descriptions*
+  - Collection: `maritime_intelligence` (~50,000–100,000 documents)
 
 #### Caching Strategy (Redis)
 - **Gold Query Cache**: Frequently accessed Snowflake Gold aggregates (chokepoint risk scores, vessel profiles) cached in Redis with a 5-minute TTL. Prevents redundant warehouse queries when multiple agents or dashboard refreshes request the same data.
@@ -413,7 +435,7 @@ flowchart TD
 - **AIS Latest Position Cache**: Most recent position per MMSI stored in Redis (key: `vessel:{mmsi}`, value: lat/lon/speed/heading/timestamp). Updated by the AIS consumer on every batch write. Enables sub-second vessel lookups without querying Snowflake.
 
 #### Embedding Generation
-- **Source documents**: GDELT article titles + GKG themes/tone summaries, ACLED event descriptions, OFAC entity descriptions
+- **Source documents**: GDELT GKG article themes/tone/entity summaries, ACLED event descriptions, OFAC entity descriptions
 - **Model**: OpenAI `text-embedding-3-small` (1536 dimensions, $0.02/1M tokens)
 - **Chunking**: 512-token chunks with 64-token overlap for articles; single-chunk for sanctions entities
 - **Metadata filters**: region, date, severity_score, source_type, cameo_code
@@ -429,16 +451,23 @@ The intelligence engine uses a **LangGraph supervisor pattern** with 5 specialis
 |---|---|---|---|
 | **Supervisor** | Claude Sonnet | Routes queries to specialists, merges results, manages state | All tools (dispatch) |
 | **Vessel Tracker** | GPT-4o-mini | Tracks vessel positions, computes ETAs, detects AIS anomalies | `query_vessel_positions`, `get_port_info` |
-| **News Analyst** | Claude Sonnet | Analyzes GDELT events for maritime impact, assesses escalation | `search_geopolitical_events` (vector), `get_chokepoint_status` |
+| **News Analyst** | Claude Sonnet | Analyzes GDELT events for maritime impact, assesses escalation | `search_geopolitical_events` (vector search), `get_chokepoint_risk` |
 | **Conflict Monitor** | GPT-4o-mini | Scores regions using ACLED data, flags emerging conflict zones | `get_conflict_events`, `get_chokepoint_risk` |
 | **Sanctions Checker** | GPT-4o-mini | Screens vessels/entities against OFAC, detects evasion patterns | `screen_vessel_sanctions`, `query_vessel_positions` |
-| **Weather Analyst** | GPT-4o-mini | Assesses storm/weather impact on shipping routes | `get_weather_alerts`, `get_chokepoint_status` |
+| **Weather Analyst** | GPT-4o-mini | Assesses storm/weather impact on shipping routes | `get_weather_alerts`, `get_chokepoint_risk` |
 
 #### MCP Server Design
-- **6 Tools**: `get_chokepoint_risk`, `screen_vessel_sanctions`, `query_vessel_positions`, `get_weather_alerts`, `get_conflict_events`, `get_port_info`
+- **7 Tools**:
+  - `get_chokepoint_risk` — Returns composite risk score for a chokepoint (queries Snowflake Gold via Redis cache)
+  - `screen_vessel_sanctions` — Checks a vessel MMSI/IMO against OFAC sanctions (queries Snowflake + ChromaDB)
+  - `query_vessel_positions` — Returns current/recent positions for a vessel or zone (queries Snowflake via Redis cache)
+  - `get_weather_alerts` — Returns active severe weather alerts for a chokepoint region (queries Snowflake)
+  - `get_conflict_events` — Returns recent ACLED conflict events for a region (queries Snowflake)
+  - `get_port_info` — Returns port metadata and characteristics (queries Snowflake dim_ports)
+  - `search_geopolitical_events` — Semantic vector search over GDELT GKG articles (queries ChromaDB via Redis cache)
 - **2 Resources**: `chokepoint_list` (static reference), `active_alerts` (dynamic feed)
 - **2 Prompts**: `maritime_risk_briefing`, `vessel_investigation`
-- **Caching**: All tool responses pass through Redis before hitting Snowflake/ChromaDB. Cache hits bypass the warehouse entirely, reducing both latency and compute cost.
+- **Caching**: All tool responses pass through Redis before hitting Snowflake/ChromaDB. Cache hits bypass the data stores entirely, reducing both latency and compute cost.
 
 #### Prompt Design
 Each agent has a system prompt with:
@@ -450,8 +479,8 @@ Each agent has a system prompt with:
 6. Few-shot examples from golden set (3–5 per agent)
 
 #### RAG Strategy
-1. User query or automated alert trigger → embed with same model → ChromaDB similarity search (k=10) with metadata filters (date recency, region)
-2. Top-k retrieved chunks + relevant Snowflake Gold aggregates (via MCP tools, served from Redis cache) injected into agent prompt
+1. User query or automated alert trigger → embed with same model → ChromaDB similarity search (k=10) via `search_geopolitical_events` tool, with metadata filters (date recency, region)
+2. Top-k retrieved chunks + relevant Snowflake Gold aggregates (via structured MCP tools, served from Redis cache) injected into agent prompt
 3. Agent generates response with inline citations
 4. Guardrails module verifies citations exist in retrieved context
 
@@ -459,10 +488,10 @@ Each agent has a system prompt with:
 **User asks:** *"What is the current risk for LNG tankers transiting the Strait of Hormuz?"*
 
 1. Supervisor receives query → identifies geopolitical + weather + vessel dimensions → routes to News Analyst, Conflict Monitor, Weather Analyst, and Vessel Tracker in parallel
-2. News Analyst: retrieves recent GDELT events near Hormuz from ChromaDB, queries Snowflake (via Redis cache) for escalation trends → produces risk narrative with citations
-3. Conflict Monitor: queries ACLED data for recent incidents, pulls CAST forecast → scores regional conflict probability
-4. Weather Analyst: checks active severe weather alerts in Hormuz corridor → assesses routing impact
-5. Vessel Tracker: queries Redis for latest AIS positions of LNG-flagged vessels near Hormuz → reports count, ETAs, and any anomalies (sub-second response from cache)
+2. News Analyst: calls `search_geopolitical_events` to retrieve recent GDELT GKG articles about Hormuz from ChromaDB, calls `get_chokepoint_risk("hormuz")` for current aggregate score → produces risk narrative with citations
+3. Conflict Monitor: calls `get_conflict_events` for ACLED data near Hormuz, pulls CAST forecast → scores regional conflict probability
+4. Weather Analyst: calls `get_weather_alerts` for active severe weather in Hormuz corridor → assesses routing impact
+5. Vessel Tracker: calls `query_vessel_positions` for LNG-flagged vessels near Hormuz (served from Redis AIS cache) → reports count, ETAs, and any anomalies
 6. Supervisor: merges all sub-results → computes composite risk score (0–100) → if > 75, routes to HITL gate
 7. Briefing output streamed to Streamlit chat interface with citations and recommended actions
 
@@ -525,7 +554,7 @@ The following POC components will be developed and committed to the GitHub repos
 
 #### POC 4: Single-Agent LangGraph Demo
 - Minimal LangGraph graph with one News Analyst agent
-- Agent receives a question about Red Sea shipping risk → retrieves context from ChromaDB → produces a cited risk assessment using Pydantic output schema
+- Agent receives a question about Red Sea shipping risk → retrieves context from ChromaDB via `search_geopolitical_events` tool → produces a cited risk assessment using Pydantic output schema
 - Demonstrates: agentic workflow, RAG integration, structured output, MCP tool call
 
 ---
@@ -536,10 +565,10 @@ The following POC components will be developed and committed to the GitHub repos
 
 | Phase | Milestone | Dates | Key Deliverables |
 |---|---|---|---|
-| **M1** | Data Ingestion & Pipeline Setup | Apr 2–6 | All 7 data source connectors operational; raw data landing in Snowflake Bronze; AIS WebSocket consumer running |
+| **M1** | Data Ingestion & Pipeline Setup | Apr 2–6 | All 7 data source connectors operational; chokepoint seed data loaded; raw data landing in Snowflake Bronze; AIS WebSocket consumer running |
 | **M2** | Big Data Processing Pipeline | Apr 5–9 | Silver/Gold transformations in Snowflake; Airflow DAGs for all sources; data quality gates; MovingPandas trajectory processing |
-| **M3** | Embedding + Vector Pipeline | Apr 7–10 | ChromaDB populated with ~50K documents; embedding pipeline tested; metadata filters working |
-| **M4** | LLM Integration + Agents + Guardrails | Apr 9–15 | LangGraph supervisor + 5 agents; MCP server with 6 tools; Redis caching layer; RAG retrieval; Pydantic schemas; HITL gate |
+| **M3** | Embedding + Vector Pipeline | Apr 7–10 | ChromaDB populated with ~50K documents from GKG + ACLED + OFAC text; embedding pipeline tested; metadata filters working |
+| **M4** | LLM Integration + Agents + Guardrails | Apr 9–15 | LangGraph supervisor + 5 agents; MCP server with 7 tools; Redis caching layer; RAG retrieval; Pydantic schemas; HITL gate |
 | **M5** | Backend APIs | Apr 12–16 | FastAPI endpoints for risk scores, vessel search, agent chat, alert feed; OpenAPI docs |
 | **M6** | Frontend / Dashboard | Apr 14–19 | Streamlit dashboard with Kepler.gl globe, PyGWalker EDA, risk heatmaps, agentic chat interface |
 | **M7** | Testing + Evals | Apr 18–22 | Golden set evals, ArkSim stress tests, unit/integration tests, CI pipeline green |
@@ -584,7 +613,7 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 | API cost overrun (OpenAI/Claude) | Medium | Medium | GPT-4o-mini for high-volume tasks; prompt caching; embedding batch processing; daily token budget caps |
 | 22-day timeline too aggressive | High | High | Parallel milestone execution; MVP-first (core pipeline + 3 agents, add 2 more if time permits); daily standups |
 | ACLED API access delay | Low | Medium | Register immediately; fallback to HDX pre-aggregated CSV from [data.humdata.org](https://data.humdata.org/organization/acled) |
-| Weather API rate limits | Low | Low | Cache hourly results in Redis; only poll for 20 chokepoint regions, not global |
+| Weather API rate limits | Low | Low | Cache hourly results in Redis; only poll for 10 chokepoint regions, not global |
 
 ---
 
@@ -594,8 +623,8 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 
 | KPI | Target | Measurement |
 |---|---|---|
-| Data sources integrated | 7 | Count of operational pipelines |
-| Total data processed | ≥ 50 GB | Snowflake storage + query volume |
+| Data sources integrated | 7 + chokepoint seed | Count of operational pipelines |
+| Total data processed | ≥ 60 GB | Snowflake storage + query volume |
 | Agent accuracy (golden set) | ≥ 4.0 / 5.0 | LLM-as-judge rubric |
 | End-to-end query latency | < 30 seconds | LangSmith P95 |
 | Redis cache hit rate | ≥ 70% | Redis `INFO stats` |
@@ -616,7 +645,7 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 | Cost Category | Estimated Usage | Unit Cost | Projected Total |
 |---|---|---|---|
 | Snowflake Compute (XS warehouse) | ~200 hours over 22 days | ~$2/credit, ~1 credit/hr for XS | ~$200 |
-| Snowflake Storage | ~52 GB | $23/TB/month | ~$1.20 |
+| Snowflake Storage | ~61 GB | $23/TB/month | ~$1.40 |
 | OpenAI Embeddings (text-embedding-3-small) | ~50M tokens | $0.02/1M tokens | ~$1.00 |
 | OpenAI GPT-4o-mini | ~10M tokens | $0.15/1M input, $0.60/1M output | ~$5.00 |
 | Claude Sonnet (reasoning agents) | ~5M tokens | $3/1M input, $15/1M output | ~$20.00 |
@@ -639,9 +668,9 @@ M8 ░░░░░░░░░░░░░░░░░░░░░░░░░�
 
 ## 11. Conclusion
 
-Maritime AI Sentinel addresses one of the most consequential challenges in global trade: the inability to rapidly assess and respond to geopolitical disruptions affecting maritime supply chains. By fusing real-time AIS vessel tracking with GDELT geopolitical events, ACLED conflict data, OFAC sanctions intelligence, and weather alerts across 7 data sources totaling 50+ GB, this project creates a comprehensive maritime risk intelligence platform.
+Maritime AI Sentinel addresses one of the most consequential challenges in global trade: the inability to rapidly assess and respond to geopolitical disruptions affecting maritime supply chains. By fusing real-time AIS vessel tracking with GDELT geopolitical events, ACLED conflict data, OFAC sanctions intelligence, and weather alerts across 7 data sources totaling 60+ GB, this project creates a comprehensive maritime risk intelligence platform.
 
-The technical architecture—Snowflake-centric big data processing with Redis caching, LangGraph multi-agent reasoning with MCP tool protocol, and Kepler.gl interactive visualization—demonstrates mastery of the core DAMG 7245 competencies: big data engineering, significant LLM use, cloud-native architecture, and user-facing application design. The integration of novel open-source libraries (MovingPandas for trajectory analytics, ArkSim for agent stress-testing, PyGWalker for interactive EDA) differentiates this project from standard approaches.
+The technical architecture—Snowflake for structured analytics with ChromaDB for semantic search, Redis caching for performance, LangGraph multi-agent reasoning with MCP tool protocol, and Kepler.gl interactive visualization—demonstrates mastery of the core DAMG 7245 competencies: big data engineering, significant LLM use, cloud-native architecture, and user-facing application design. The integration of novel open-source libraries (MovingPandas for trajectory analytics, ArkSim for agent stress-testing, PyGWalker for interactive EDA) differentiates this project from standard approaches.
 
 With a clear 22-day execution plan and a realistic cost budget within available Snowflake credits and API keys, this project is designed for practical implementation and successful delivery by April 24, 2026.
 
@@ -660,6 +689,7 @@ With a clear 22-day execution plan and a realistic cost budget within available 
 - The Weather Company API: https://developer.weather.com/docs
 - World Port Index — HDX: https://data.humdata.org/dataset/world-port-index
 - Natural Earth Coastlines: https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/
+- U.S. Energy Information Administration — World Oil Transit Chokepoints: https://www.eia.gov/international/analysis/special-topics/World_Oil_Transit_Chokepoints
 
 ### Frameworks & Libraries
 - LangGraph — Agent orchestration: https://www.langchain.com/langgraph (MIT License)
@@ -681,13 +711,15 @@ With a clear 22-day execution plan and a realistic cost budget within available 
 - Everstream Analytics — 2026 Supply Chain Risk Report: https://www.everstream.ai/
 - BCG — Agentic AI Value Projections (17% → 29% by 2028): https://www.bcg.com/
 - LangChain State of Agent Engineering (2025 Survey, 1,340 respondents): https://www.langchain.com/state-of-agent-engineering
-- Google A2A Protocol: https://a2a-protocol.org/ | [GitHub](https://github.com/a2aproject/A2A)
+- International Chamber of Shipping — Shipping and World Trade: https://www.ics-shipping.org/
 
 ---
 
 ## Appendix
 
-### A. Chokepoint Monitoring Zones
+### A. Chokepoint Monitoring Zones (Application-Defined Reference Data)
+
+The following chokepoint definitions are manually curated from published maritime geography sources ([U.S. EIA](https://www.eia.gov/international/analysis/special-topics/World_Oil_Transit_Chokepoints), [UNCTAD](https://unctad.org/), [International Chamber of Shipping](https://www.ics-shipping.org/)). Each entry includes a lat/lon bounding box used to filter AIS positions, geo-tag events, and scope weather alerts. This data is seeded into `dim_chokepoints` at system initialization.
 
 | Chokepoint | Region | % Global Trade | Primary Risk Factors |
 |---|---|---|---|
@@ -706,13 +738,13 @@ With a clear 22-day execution plan and a realistic cost budget within available 
 ```json
 {
   "name": "get_chokepoint_risk",
-  "description": "Returns composite risk score for a maritime chokepoint",
+  "description": "Returns composite risk score for a maritime chokepoint by aggregating geopolitical, weather, sanctions, and congestion signals from Snowflake Gold tables",
   "inputSchema": {
     "type": "object",
     "properties": {
       "chokepoint_id": {
         "type": "string",
-        "description": "Chokepoint identifier (e.g., 'hormuz', 'suez', 'malacca')"
+        "description": "Chokepoint identifier from dim_chokepoints (e.g., 'hormuz', 'suez', 'malacca')"
       },
       "timeframe_days": {
         "type": "integer",
@@ -721,6 +753,37 @@ With a clear 22-day execution plan and a realistic cost budget within available 
       }
     },
     "required": ["chokepoint_id"]
+  }
+}
+```
+
+```json
+{
+  "name": "search_geopolitical_events",
+  "description": "Semantic vector search over GDELT GKG article summaries in ChromaDB. Returns the most contextually relevant news articles for a given maritime risk query.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Natural language search query (e.g., 'military escalation near Strait of Hormuz')"
+      },
+      "region": {
+        "type": "string",
+        "description": "Optional region filter (e.g., 'middle_east', 'southeast_asia')"
+      },
+      "days_back": {
+        "type": "integer",
+        "description": "Only return articles from the last N days",
+        "default": 30
+      },
+      "k": {
+        "type": "integer",
+        "description": "Number of results to return",
+        "default": 10
+      }
+    },
+    "required": ["query"]
   }
 }
 ```
@@ -785,8 +848,8 @@ You are the News Analyst agent. Analyze GDELT geopolitical events for
 their impact on maritime shipping.
 
 Available MCP tools:
-- search_geopolitical_events(query, region, days_back, k) → vector search
-- get_chokepoint_status(chokepoint_id) → current transit metrics
+- search_geopolitical_events(query, region, days_back, k) → semantic vector search over GDELT GKG articles in ChromaDB
+- get_chokepoint_risk(chokepoint_id, timeframe_days) → composite risk score from Snowflake Gold
 
 Output MUST be valid JSON matching this schema:
 {
@@ -808,7 +871,7 @@ If risk_level > 75, set requires_hitl = true.
 |---|---|---|---|
 | `fastapi` | Custom (`./api`) | 8000 | REST API backend |
 | `streamlit` | Custom (`./dashboard`) | 8501 | Frontend dashboard |
-| `chromadb` | `chromadb/chroma:latest` | 8200 | Vector store |
+| `chromadb` | `chromadb/chroma:latest` | 8200 | Vector store (semantic search) |
 | `redis` | `redis:7-alpine` | 6379 | Caching layer |
 | `airflow-webserver` | `apache/airflow:2.8.1` | 8080 | DAG UI |
 | `airflow-scheduler` | `apache/airflow:2.8.1` | — | DAG execution |
