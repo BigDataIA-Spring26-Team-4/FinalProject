@@ -2,238 +2,257 @@
 **DAMG 7245 — Big Data and Intelligent Analytics**
 
 ## Team Members
-- Deep Patel
+- Deep Prajapati
 - Tapan Patel
 - Seamus McAvoy
 
 ### Attestation (Required)
 WE ATTEST THAT WE HAVEN'T USED ANY OTHER STUDENTS' WORK IN OUR ASSIGNMENT AND ABIDE BY THE POLICIES LISTED IN THE STUDENT HANDBOOK.
 
+- Deep Prajapati: 33.3%
+- Tapan Patel: 33.3%
+- Seamus McAvoy: 33.3%
+
+---
+
 ## 1. Title
 **Maritime AI Sentinel:** Global Maritime Supply Chain Resilience via Geopolitical Event Tracking and Agentic AI
+
+---
 
 ## 2. Introduction
 
 ### 2.1 Background
-Global maritime shipping carries over 80% of international trade by
-volume (UNCTAD Review of Maritime Transport 2024). The industry faces an
-unprecedented convergence of disruptions: geopolitical conflicts
-redirecting shipping routes (Red Sea / Houthi attacks adding 10--14 days
-to Asia--Europe voyages), climate events blocking critical chokepoints
-(Panama Canal drought 2023--24 cutting daily transits from 36 to 24),
-and evolving sanctions regimes requiring real-time compliance screening.
-These events cascade through global supply chains, causing port
-congestion, container shortages, freight rate volatility, and billions
-in delayed goods.
+Global maritime shipping carries over 80% of international trade by volume ([UNCTAD Review of Maritime Transport 2024](https://unctad.org/publication/review-maritime-transport-2024)). The industry faces an unprecedented convergence of disruptions: geopolitical conflicts redirecting shipping routes (Red Sea / Houthi attacks adding 10–14 days to Asia–Europe voyages), climate events blocking critical chokepoints (Panama Canal drought 2023–24 cutting daily transits from 36 to 24), and evolving sanctions regimes requiring real-time compliance screening. These events cascade through global supply chains, causing port congestion, container shortages, freight rate volatility, and billions in delayed goods.
 
-Today, maritime intelligence is fragmented. Vessel tracking data (AIS)
-sits in one silo, geopolitical event feeds in another, sanctions lists
-in a third, as well as weather/other misc. sources. Analysts at logistics
-firms, insurers, and commodity traders must manually cross-reference
-these sources to assess risk---a process that is slow, error-prone, and
-fundamentally unscalable. No single platform provides an integrated,
-AI-driven view that continuously monitors geopolitical events,
-correlates them with live vessel movements, and proactively recommends
-supply chain adjustments.
+Today, maritime intelligence is fragmented. Vessel tracking data (AIS) sits in one silo, geopolitical event feeds in another, sanctions lists in a third, and weather/other sources in yet another. Analysts at logistics firms, insurers, and commodity traders must manually cross-reference these sources to assess risk—a process that is slow, error-prone, and fundamentally unscalable. No single platform provides an integrated, AI-driven view that continuously monitors geopolitical events, correlates them with live vessel movements, and proactively recommends supply chain adjustments.
 
-This project addresses that gap by building Maritime AI Sentinel---a
-cloud-native, agentic AI platform that ingests high volumes of
-heterogeneous maritime and geopolitical data, fuses them through
-big-data pipelines, and deploys a LangGraph-based multi-agent system to
-deliver real-time risk intelligence and actionable rerouting
-recommendations.
+According to [Everstream Analytics](https://www.everstream.ai/), geopolitical fragmentation and strategic use of trade regulations is rated at a **97% threat level** for 2026. Meanwhile, [BCG research](https://www.bcg.com/) shows agentic AI systems accounted for 17% of total AI value in 2025, projected to reach 29% by 2028—making this the ideal moment to apply agentic AI to maritime risk intelligence.
+
+This project addresses that gap by building **Maritime AI Sentinel**—a cloud-native, agentic AI platform that ingests high volumes of heterogeneous maritime and geopolitical data, fuses them through big-data pipelines, and deploys a LangGraph-based multi-agent system to deliver real-time risk intelligence and actionable rerouting recommendations.
 
 ### 2.2 Objective
 The primary goals of this project are:
 
--   **Big Data Engineering:** Ingest, process, and store 50+ GB of
-    multi-source maritime and geopolitical data in Snowflake using
-    Airflow-orchestrated batch and near-real-time pipelines.
+- **Big Data Engineering:** Ingest, process, and store 50+ GB of multi-source maritime and geopolitical data in Snowflake using Airflow-orchestrated batch and near-real-time pipelines with a medallion architecture (Bronze/Silver/Gold).
 
--   **Significant LLM Use:** Deploy a LangGraph multi-agent system with
-    5+ specialist agents (geopolitical analyst, sanctions screener,
-    route optimizer, risk scorer, briefing generator) using Claude and
-    OpenAI models with RAG over vector-embedded evidence.
+- **Significant LLM Use:** Deploy a LangGraph multi-agent system with 5 specialist agents (vessel tracker, news analyst, conflict monitor, sanctions checker, weather analyst) using Claude and OpenAI models with RAG over vector-embedded evidence, connected via MCP tool protocol.
 
--   **Cloud-Native Architecture:** Fully containerized (Docker),
-    orchestrated on GCP Cloud Run / Snowflake, with CI/CD via GitHub
-    Actions and infrastructure-as-code.
+- **Cloud-Native Architecture:** Fully containerized (Docker) services hosted on AWS EC2, with CI/CD via GitHub Actions, Airflow orchestration, and Snowflake as the central data warehouse.
 
--   **User-Facing Application:** Streamlit dashboard with interactive
-    globe visualization, real-time alert feed, vessel search, risk
-    heatmaps, and agentic chat interface for natural language supply
-    chain queries.
+- **User-Facing Application:** Streamlit dashboard with Kepler.gl interactive globe visualization, real-time alert feed, vessel search, risk heatmaps, and agentic chat interface for natural language supply chain queries.
+
+---
 
 ## 3. Project Overview
 
 ### 3.1 Scope
-- **Data Sources**
-  - [aisstream.io](aisstream.io) - Real-time vessel locations streamed via websockets
-  - [GDELT](https://www.gdeltproject.org) - Large open database of international news media
-  - [ACLED](https://acleddata.com) - Conflict monitoring (weekly) & predictions of future conflict
-  - [US OFAC](https://www.opensanctions.org/datasets/us_ofac_cons/) - Active sanctions data
-  - [The Weather Company API](https://developer.weather.com/docs) - Global weather forecasts
-  - [World Port Index](https://data.humdata.org/dataset/world-port-index) - Locations and characteristics of all ports worldwide
-  - [OSM Coastlines](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/) - GeoJSON map of coastlines
 
-- **ETL pipelines**
-  - Apache Airflow - Batch data processing based around GDELT and ACLED update schedules
-    - GDELT - Updates every 15 minutes
-    - ACLED - Weekly updates (Tuesday)
-    - US OFAC - Maritime sanctions to be refreshed daily
-    - Hourly weather updates (storms/extreme weather only)
-  - Medallion architecture (bronze/silver/gold layers) in Snowflake
-  - Websocket-based streaming pipeline for real-time vessel location & heading tracking
+#### In Scope
+- **Data Sources (7 sources)**
+  - [aisstream.io](https://aisstream.io) — Real-time vessel locations streamed via WebSocket
+  - [GDELT 2.0](https://www.gdeltproject.org) — Global news event database (Events + GKG), updates every 15 min
+  - [ACLED](https://acleddata.com) — Conflict event monitoring, weekly updates + forecasts (CAST)
+  - [US OFAC via OpenSanctions](https://www.opensanctions.org/datasets/us_ofac_cons/) — Active maritime sanctions, daily refresh
+  - [The Weather Company API](https://developer.weather.com/docs) — Global severe weather alerts, hourly refresh
+  - [World Port Index](https://data.humdata.org/dataset/world-port-index) — 3,600+ port locations and characteristics
+  - [Natural Earth Coastlines](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/) — GeoJSON global coastlines
 
-- **LLM components**
-  - LangGraph supervisor agent orchestrating 5 specialist agents with human-in-the-loop (HITL) gates for high-risk alerts
+- **ETL Pipelines**
+  - Apache Airflow DAGs for all batch sources (GDELT, ACLED, OFAC, Weather, Ports, Coastlines)
+  - Python async WebSocket consumer for streaming AIS data
+  - Snowflake Snowpipe / staged ingestion for Bronze layer loading
+  - Medallion architecture: Bronze (raw) → Silver (cleaned, typed, deduplicated) → Gold (aggregated, indexed)
 
-- **Cloud infrastructure**
-  - Containers hosted in AWS EC2:
-    - Airflow
-    - FastAPI server
-    - Streamlit frontend
+- **LLM Components**
+  - LangGraph supervisor agent orchestrating 5 specialist agents
+  - MCP server exposing maritime data tools (chokepoint status, vessel lookup, sanctions screen, etc.)
+  - RAG pipeline: OpenAI embeddings → ChromaDB vector store → context retrieval into agent prompts
+  - Human-in-the-Loop (HITL) gates for high-risk alerts (risk score > 75)
+
+- **Cloud Infrastructure**
+  - AWS EC2 hosting Docker containers: Airflow, FastAPI, Streamlit, ChromaDB, AIS consumer
+  - Snowflake as central data warehouse ($300 credits)
+  - GitHub Actions CI/CD pipeline
+
+- **Guardrails & HITL**
+  - Pydantic schema enforcement on all agent outputs
+  - Citation grounding — every agent claim must reference a source document
+  - HITL approval panel in Streamlit for high-risk advisories
+
+- **Evaluation Strategy**
+  - Golden set of 50 curated query–response pairs
+  - ArkSim synthetic user simulation for stress testing agents
+  - LangSmith tracing for latency, token usage, and cost tracking
+
+#### Out of Scope
+- Real-time algorithmic trading or financial execution
+- Custom AIS hardware receiver deployment
+- Production-grade SLA guarantees (academic/portfolio project)
+- Quantum computing components
 
 ### 3.2 Stakeholders / End Users
-- **Logistics / Freight Forwarders** - Monitor vessel ETAs & detect delays from geopolitical events, enabline proactive rerouting
-- **Commodity traders** - Early warning on supply shocks
+
+| Stakeholder | Use Case | Value |
+|---|---|---|
+| Logistics / Freight Forwarders | Monitor vessel ETAs, detect delays from geopolitical events | Proactive rerouting saves $50K–$500K per disruption |
+| Commodity Traders | Track commodity flows through chokepoints | Early warning on supply shocks, arbitrage signals |
+| Marine Insurance Underwriters | Assess war-risk premiums by region | Data-driven premium adjustments |
+| Port Authorities | Forecast congestion from rerouted traffic | Optimized berth allocation |
+
+---
 
 ## 4. Problem Statement
 
 ### 4.1 Current Challenges
--   **Data Fragmentation:** AIS data (vessel positions), geopolitical
-    event feeds (GDELT/ACLED), sanctions lists (OFAC/EU/UN), and trade
-    statistics (UN Comtrade) exist in completely separate systems with
-    incompatible schemas, temporal granularities, and geographic
-    reference systems.
+- **Data Fragmentation:** AIS data (vessel positions), geopolitical event feeds (GDELT/ACLED), sanctions lists (OFAC), and weather data exist in completely separate systems with incompatible schemas, temporal granularities, and geographic reference systems.
 
--   **Manual Workflows:** Maritime risk analysts spend 4--8 hours daily
-    cross-referencing multiple dashboards (MarineTraffic, Reuters,
-    Treasury.gov) to produce a single risk assessment. This is
-    fundamentally unscalable during crisis escalation.
+- **Manual Workflows:** Maritime risk analysts spend 4–8 hours daily cross-referencing multiple dashboards (MarineTraffic, Reuters, Treasury.gov) to produce a single risk assessment. This is fundamentally unscalable during crisis escalation.
 
--   **Lack of Intelligent Automation:** Current tools provide data but
-    no reasoning. No platform can answer: "If the Strait of Hormuz is
-    blockaded, which of our vessels are at risk, what is the cost
-    impact, and what are the best alternative routes?"
+- **Lack of Intelligent Automation:** Current tools provide data but no reasoning. No platform can answer: *"If the Strait of Hormuz is blockaded, which of our vessels are at risk, what is the cost impact, and what are the best alternative routes?"*
 
--   **Big Data Bottlenecks:** AIS data alone generates \~300M position
-    reports daily globally. GDELT produces 2.5TB+ annually. Processing
-    this at scale requires distributed compute that most maritime
-    analysts lack access to.
+- **Big Data Bottlenecks:** AIS data alone generates ~300M position reports daily globally. GDELT produces 2.5TB+ annually. Processing this at scale requires distributed compute that most maritime analysts lack access to.
 
--   **LLM Hallucination Risk:** Applying LLMs naively to high-stakes
-    maritime decisions is dangerous. Hallucinated sanctions matches or
-    false rerouting recommendations could cost millions or create legal
-    liability.
+- **LLM Hallucination Risk:** Applying LLMs naively to high-stakes maritime decisions is dangerous. Hallucinated sanctions matches or false rerouting recommendations could cost millions or create legal liability.
 
 ### 4.2 Opportunities
--   **Scalable Pipelines:** Snowflake's elastic compute + Airflow
-    orchestration enables processing of multi-TB maritime datasets with
-    pay-per-use economics using our \$300 credit allocation.
+- **Scalable Pipelines:** Snowflake's elastic compute + Airflow orchestration enables processing of multi-TB maritime datasets with pay-per-use economics using our $300 credit allocation.
 
--   **LLM-Assisted Analysis:** A LangGraph multi-agent system can
-    decompose complex supply chain questions into sub-tasks (sanctions
-    check, route analysis, risk scoring) handled by specialist
-    agents---mimicking a team of human analysts at 100x speed.
+- **LLM-Assisted Analysis:** A LangGraph multi-agent system can decompose complex supply chain questions into sub-tasks (sanctions check, route analysis, risk scoring) handled by specialist agents—mimicking a team of human analysts at 100x speed.
 
--   **Automated Decision Support:** RAG-grounded agents with HITL gates
-    enable confident, citation-backed rerouting advisories that humans
-    can trust and approve.
+- **Automated Decision Support:** RAG-grounded agents with HITL gates enable confident, citation-backed rerouting advisories that humans can trust and approve.
 
--   **Near-Real-Time Insights:** Streaming AIS data + 15-minute GDELT
-    updates + weekly ACLED refreshes provide a continuously updated risk
-    picture.
+- **Near-Real-Time Insights:** Streaming AIS data + 15-minute GDELT updates + weekly ACLED refreshes + hourly weather alerts provide a continuously updated risk picture.
+
+---
 
 ## 5. Methodology
 
 ### 5.1 Data Sources
-  - [aisstream.io](aisstream.io) - Real-time vessel locations streamed via websockets
-    - <1GB impact - negligible history retained
-  - [GDELT](https://www.gdeltproject.org) - Large open database of international news media
-    - Events 2.0 database - 50MB daily * 30-day history = 1.5GB
-    - DOC API to be accessed as-needed by agentic workflows
-  - [ACLED](https://acleddata.com) - Conflict monitoring (weekly) & predictions of future conflict
-    - 1 month of history = 20MB
-  - [US OFAC](https://www.opensanctions.org/datasets/us_ofac_cons/) - Active sanctions data
-    - Maritime-related sanctions = 5MB
-  - [The Weather Company API](https://developer.weather.com/docs) - Global weather forecasts
-    - All global severe weather alerts in past 30 days = 10MB
-    - Update hourly
-  - [World Port Index](https://data.humdata.org/dataset/world-port-index) - Locations and characteristics of all ports worldwide
-    - 70MB (static)
-  - [OSM Coastlines](https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/) - GeoJSON map of coastlines
-    - 10MB (static)
 
-Total expected volume: ~1.6GB
+| Source | Type / Format | Access Method | Volume (est.) | Refresh Cadence |
+|---|---|---|---|---|
+| **aisstream.io** | AIS vessel positions (JSON) | Free WebSocket API (API key) | ~500 MB/day filtered to 20 chokepoints | Real-time streaming |
+| **GDELT 2.0 Events** | Geopolitical events (CAMEO coded, CSV) | BigQuery (free 1TB/mo) + gdeltPyR | 50 MB/day × 90 days = **4.5 GB** | Every 15 minutes |
+| **GDELT 2.0 GKG** | Global Knowledge Graph (themes, tone, entities) | BigQuery + CSV download | 500 MB/day × 90 days = **45 GB** | Every 15 minutes |
+| **ACLED** | Conflict events (CSV/JSON) | REST API (free academic registration) | ~50 MB for 1997–present archive | Weekly (Tuesdays) |
+| **US OFAC (OpenSanctions)** | Sanctions entities + vessels (JSON) | Bulk download (free non-commercial) | ~5 MB (maritime subset) | Daily |
+| **Weather Company API** | Severe weather alerts (JSON) | REST API (freemium) | ~300 MB/month (global severe alerts) | Hourly |
+| **World Port Index** | Port metadata + coordinates (CSV) | HDX download | ~70 MB (static) | Annual |
+| **Natural Earth Coastlines** | Coastline boundaries (GeoJSON) | Direct download | ~10 MB (static) | Static |
+
+**Total Expected Volume: ~52 GB** (primarily driven by 90-day GDELT GKG backfill)
+
+> **Justification of scale:** GDELT's Global Knowledge Graph alone at 500MB/day provides the big-data backbone. Combined with streaming AIS data (continuous WebSocket feed), this project processes genuinely large-scale, heterogeneous data across 7 sources—satisfying the data-heavy requirement.
 
 ### 5.2 Technology Stack
-Specify technologies and justify your choices:
-- **Cloud:** AWS / GCP / Azure / Snowflake
-- **Storage:** S3 / GCS / Azure Blob / BigQuery / DynamoDB
-- **Compute:** Spark / Ray / Dataproc / EMR / Kubernetes / Cloud Run
-- **LLM Providers:** OpenAI / Claude / Gemini / LLaMA
-- **Vector Store:** Pinecone / Chroma / Weaviate / BigQuery Vector
-- **Orchestration:** Airflow
-- **API:** FastAPI / Cloud Functions / Lambda
-- **CI/CD:** GitHub Actions
-- **Frontend:** Streamlit (simple; bulk of tech. overhead focused on backend)
+
+| Layer | Technology | Why This Over Alternatives |
+|---|---|---|
+| **Cloud Data Warehouse** | Snowflake ($300 credits) | Elastic compute, native semi-structured JSON support, Snowpipe for streaming ingest, zero-copy cloning for dev/prod. Chosen over BigQuery (limited credits) and Redshift (less flexible scaling). |
+| **Orchestration** | Apache Airflow (Docker) | Industry-standard DAG orchestration with rich operator ecosystem. Proven in our PE Org-AI-R project (CS1–CS5). Chosen over Prefect (smaller community) and Dagster (less mature). |
+| **Streaming Ingest** | Python asyncio + WebSocket | aisstream.io delivers AIS via WebSocket; async Python is the lightest-weight consumer. Chosen over Kafka (overkill for single-source academic project). |
+| **Compute / Processing** | Snowflake SQL + Snowpark Python UDFs | Process data where it lives. Snowpark for feature engineering. Chosen over Spark/EMR (additional infra cost beyond Snowflake credits). |
+| **LLM Providers** | Claude Sonnet + OpenAI GPT-4o-mini | Claude for complex reasoning agents; GPT-4o-mini for high-volume classification. Dual-provider for cost optimization + resilience. |
+| **Embeddings** | OpenAI text-embedding-3-small (1536d) | Best cost/quality ratio at $0.02/1M tokens. Chosen over Cohere (fewer integrations) and local models (GPU-limited). |
+| **Vector Store** | ChromaDB (self-hosted Docker) | Zero-cost, persistent, good Python integration. Proven in PE Org-AI-R CS4/CS5. Chosen over Pinecone (paid) and Weaviate (heavier infra). |
+| **Agentic Framework** | LangGraph | Graph-based stateful multi-agent orchestration with HITL gates, conditional branching, LangSmith observability. Chosen over CrewAI (less control) and AutoGen (less production-ready). |
+| **Tool Protocol** | MCP (Model Context Protocol) | Exposes maritime data as structured tools for agents (get_chokepoint_risk, screen_vessel, etc.). Same pattern proven in PE Org-AI-R CS5. |
+| **Agent Testing** | ArkSim (Arklex AI) | Simulates multi-turn conversations with synthetic users to stress-test agents pre-production. Introduced in DAMG 7245 class. |
+| **Trajectory Analytics** | MovingPandas | Stop detection, trajectory splitting, transit time computation on AIS tracks. Purpose-built for movement data. |
+| **API Layer** | FastAPI | Async, auto-OpenAPI docs, Pydantic validation. Chosen over Flask (sync) and Django (too heavy). |
+| **Frontend** | Streamlit + Kepler.gl | Rapid prototyping with Kepler.gl for GPU-rendered geospatial visualization (3D arcs, hexbin heatmaps). Chosen over React (time constraint). |
+| **EDA / Exploration** | PyGWalker | Tableau-like interactive exploration inside Streamlit. Drag-and-drop visual analysis without separate BI tool. |
+| **CI/CD** | GitHub Actions | Free for public repos, tight GitHub integration. Proven across CS1–CS5. |
+| **Containerization** | Docker + Docker Compose | Multi-service orchestration (Airflow, FastAPI, ChromaDB, Streamlit, AIS consumer). |
+| **Project Management** | GitHub Projects Kanban + Issues | Satisfies TA requirement for Kanban boards. |
 
 ### 5.3 Architecture
 
-#### 5.3.1 System Architecture Diagram
+#### 5.3.1 Alternative Architectures Considered
+
+We evaluated three architectural approaches before selecting our final design:
+
+**Architecture A: Fully GCP-Native**
+- BigQuery for storage + Dataproc for Spark processing + Cloud Run for APIs + Vertex AI for agents
+- *Pros:* Tight integration, managed services, less ops overhead
+- *Cons:* No Snowflake credits to leverage, Vertex AI agent tooling less mature than LangGraph, vendor lock-in
+- *Verdict:* Rejected — cannot use $300 Snowflake credits, and LangGraph is more flexible for custom multi-agent orchestration
+
+**Architecture B: Kafka-Centric Streaming**
+- Confluent Kafka for all data ingestion (AIS + batch sources) + Kafka Streams for processing + ksqlDB for analytics
+- *Pros:* True real-time for all sources, unified streaming paradigm
+- *Cons:* Massive infra overhead for academic project, overkill when only AIS needs real-time, Kafka cluster costs exceed budget
+- *Verdict:* Rejected — streaming overhead doesn't justify the single real-time source (AIS)
+
+**Architecture C: Snowflake-Centric with Targeted Streaming (SELECTED)**
+- Snowflake as central warehouse + Airflow for batch orchestration + async Python for AIS streaming + LangGraph agents with MCP tools
+- *Pros:* Leverages $300 Snowflake credits, batch pipelines cover 6/7 sources efficiently, streaming only where needed (AIS), LangGraph provides maximum agent flexibility, MCP proven in PE Org-AI-R
+- *Cons:* AIS streaming handled outside Snowflake (Python consumer → staged load), not a pure streaming architecture
+- *Verdict:* **Selected** — best balance of cost, complexity, and capability for a 22-day academic project
+
+#### 5.3.2 System Architecture Diagram
 
 ```mermaid
 graph TB
-    subgraph EXT["External data sources"]
+    subgraph EXT["External Data Sources"]
         direction TB
         AIS["aisstream.io\nWebSocket stream"]
-        GDELT["GDELT\nNews — 15 min updates"]
+        GDELT["GDELT 2.0\nEvents + GKG — 15 min"]
         ACLED["ACLED\nConflict — weekly"]
         OFAC["US OFAC\nSanctions — daily"]
-        TWC["Weather Company API\nHourly weather"]
+        TWC["Weather Company API\nSevere alerts — hourly"]
         WPI["World Port Index\nPort locations"]
-        OSM["OSM Coastlines\nGeoJSON"]
+        NE["Natural Earth\nCoastlines GeoJSON"]
     end
 
-    subgraph AWS["AWS EC2 — containerised services"]
+    subgraph AWS["AWS EC2 — Containerized Services"]
         direction TB
 
-        subgraph AIRFLOW["Airflow container"]
-            BATCH["Batch ETL pipelines\nGDELT · ACLED · OFAC · Weather"]
+        subgraph AIRFLOW["Airflow Container"]
+            BATCH["Batch ETL DAGs\nGDELT · ACLED · OFAC\nWeather · Ports · Coastlines"]
         end
 
-        subgraph STREAM["Streaming pipeline"]
-            WS["WebSocket consumer\nReal-time vessel positions"]
+        subgraph STREAM["Streaming Pipeline"]
+            WS["Async WebSocket Consumer\nReal-time AIS positions"]
         end
 
-        subgraph SF["Snowflake — medallion architecture"]
-            BRONZE["Bronze layer\nRaw ingestion"]
-            SILVER["Silver layer\nCleaned & enriched"]
-            GOLD["Gold layer\nAnalytics-ready"]
+        subgraph SF["Snowflake — Medallion Architecture"]
+            BRONZE["Bronze Layer\nRaw JSON/CSV ingestion"]
+            SILVER["Silver Layer\nCleaned, typed, deduplicated\n+ MovingPandas trajectory features"]
+            GOLD["Gold Layer\nRisk scores, transit analytics\nChokepoint aggregates"]
         end
 
-        subgraph AGENTS["LangGraph agent system"]
-            SUP["Supervisor agent"]
-            A1["Vessel tracker"]
-            A2["News analyst"]
-            A3["Conflict monitor"]
-            A4["Sanctions checker"]
-            A5["Weather analyst"]
-            HITL["HITL gate\nHigh-risk alerts"]
+        subgraph VECTOR["Vector Pipeline"]
+            EMB["Embedding Pipeline\nOpenAI text-embedding-3-small"]
+            CHROMA["ChromaDB\nVector Store"]
         end
 
-        subgraph API["FastAPI container"]
-            FAPI["REST API server"]
+        subgraph MCP_SRV["MCP Server"]
+            TOOLS["Maritime Tools\nget_chokepoint_risk\nscreen_vessel_sanctions\nquery_vessel_positions\nget_weather_alerts\nget_conflict_events"]
         end
 
-        subgraph FRONT["Streamlit container"]
-            UI["Streamlit frontend"]
+        subgraph AGENTS["LangGraph Agent System"]
+            SUP["Supervisor Agent\n(Claude Sonnet)"]
+            A1["Vessel Tracker\n(GPT-4o-mini)"]
+            A2["News Analyst\n(Claude Sonnet)"]
+            A3["Conflict Monitor\n(GPT-4o-mini)"]
+            A4["Sanctions Checker\n(GPT-4o-mini)"]
+            A5["Weather Analyst\n(GPT-4o-mini)"]
+            HITL["HITL Gate\nHuman review for\nrisk score > 75"]
+        end
+
+        subgraph API["FastAPI Container"]
+            FAPI["REST API\nOpenAPI documented"]
+        end
+
+        subgraph FRONT["Streamlit Container"]
+            UI["Dashboard\nKepler.gl globe\nPyGWalker EDA\nAgentic chat"]
         end
     end
 
-    subgraph USER["End users"]
-        ANALYST["Maritime analyst"]
+    subgraph USER["End Users"]
+        ANALYST["Maritime Analyst"]
     end
 
     AIS --> WS
@@ -242,19 +261,20 @@ graph TB
     OFAC --> BATCH
     TWC --> BATCH
     WPI --> BATCH
-    OSM --> BATCH
+    NE --> BATCH
 
     BATCH --> BRONZE
     WS --> BRONZE
     BRONZE --> SILVER
     SILVER --> GOLD
 
-    GOLD --> SUP
-    SUP --> A1
-    SUP --> A2
-    SUP --> A3
-    SUP --> A4
-    SUP --> A5
+    SILVER -->|"articles + sanctions"| EMB
+    EMB --> CHROMA
+
+    GOLD --> TOOLS
+    CHROMA --> TOOLS
+    TOOLS --> SUP
+    SUP --> A1 & A2 & A3 & A4 & A5
     A1 & A2 & A3 & A4 & A5 --> SUP
     SUP --> HITL
 
@@ -265,62 +285,75 @@ graph TB
     UI --> ANALYST
 ```
 
-#### 5.3.2 Data Flow Diagram
+#### 5.3.3 Data Flow Diagram
+
 ```mermaid
 flowchart TD
-    subgraph INGEST["Ingestion layer"]
+    subgraph INGEST["Ingestion Layer"]
         direction LR
         S1["aisstream.io\nWebSocket"]
-        S2["GDELT\n15-min poll"]
+        S2["GDELT 2.0\nEvents + GKG\n15-min poll"]
         S3["ACLED\nWeekly pull"]
         S4["OFAC\nDaily pull"]
         S5["Weather API\nHourly pull"]
-        S6["World Port Index\nOne-time + refresh"]
-        S7["OSM Coastlines\nOne-time + refresh"]
+        S6["World Port Index\nOne-time load"]
+        S7["Natural Earth\nOne-time load"]
     end
 
-    subgraph PIPE["Pipeline layer"]
+    subgraph PIPE["Pipeline Layer"]
         direction LR
-        WS_PIPE["Streaming pipeline\nWebSocket consumer"]
+        WS_PIPE["Async WebSocket\nConsumer"]
         AF_PIPE["Airflow DAGs\nScheduled ETL"]
     end
 
-    subgraph STORAGE["Snowflake — medallion storage"]
-        direction LR
-        BR["Bronze\nRaw, unvalidated"]
-        SL["Silver\nDeduplicated, typed,\nenriched"]
-        GL["Gold\nAggregated, indexed,\nquery-ready"]
-    end
-
-    subgraph AGENT["Agent layer — LangGraph"]
+    subgraph STORAGE["Snowflake — Medallion Storage"]
         direction TB
-        SUP["Supervisor agent\nRoutes queries & results"]
-        AG1["Vessel tracker\nPositions & routes"]
-        AG2["News analyst\nGDELT event signals"]
-        AG3["Conflict monitor\nACLED risk scoring"]
-        AG4["Sanctions checker\nOFAC vessel matching"]
-        AG5["Weather analyst\nRoute risk from storms"]
+        BR["Bronze\nRaw, unvalidated\nJSON/CSV as-ingested"]
+        SL["Silver\nDeduplicated, typed\nGeo-enriched\nMovingPandas trajectories"]
+        GL["Gold\nChokepoint risk scores\nTransit time aggregates\nVessel risk profiles"]
     end
 
-    HITL{{"HITL gate\nHuman review\nfor high-risk alerts"}}
+    subgraph EMBED["Embedding Pipeline"]
+        direction LR
+        EMBED_GEN["OpenAI\ntext-embedding-3-small"]
+        CHROMA_DB["ChromaDB\n~50K–100K documents"]
+    end
 
-    subgraph SERVE["Serving layer"]
+    subgraph AGENT["Agent Layer — LangGraph + MCP"]
+        direction TB
+        MCP_TOOLS["MCP Server\n6 maritime tools"]
+        SUP["Supervisor Agent\nRoutes queries & merges results"]
+        AG1["Vessel Tracker\nPositions, routes, ETAs"]
+        AG2["News Analyst\nGDELT event signals"]
+        AG3["Conflict Monitor\nACLED risk scoring"]
+        AG4["Sanctions Checker\nOFAC vessel matching"]
+        AG5["Weather Analyst\nStorm routing risks"]
+    end
+
+    HITL{{"HITL Gate\nHuman review\nrisk > 75"}}
+
+    subgraph SERVE["Serving Layer"]
         API["FastAPI\nREST endpoints"]
-        UI["Streamlit\nDashboard"]
+        UI["Streamlit + Kepler.gl\nDashboard"]
     end
 
-    USR(["Maritime analyst"])
+    USR(["Maritime Analyst"])
 
     S1 --> WS_PIPE
     S2 & S3 & S4 & S5 & S6 & S7 --> AF_PIPE
 
-    WS_PIPE -->|"raw NMEA / position events"| BR
+    WS_PIPE -->|"raw position JSON"| BR
     AF_PIPE -->|"raw files / API responses"| BR
 
-    BR -->|"validate, deduplicate"| SL
-    SL -->|"aggregate, enrich"| GL
+    BR -->|"validate, deduplicate, type-cast"| SL
+    SL -->|"aggregate, enrich, score"| GL
 
-    GL -->|"context retrieval"| SUP
+    SL -->|"articles + sanctions text"| EMBED_GEN
+    EMBED_GEN --> CHROMA_DB
+
+    GL --> MCP_TOOLS
+    CHROMA_DB --> MCP_TOOLS
+    MCP_TOOLS --> SUP
     SUP --> AG1 & AG2 & AG3 & AG4 & AG5
     AG1 & AG2 & AG3 & AG4 & AG5 -->|"sub-task results"| SUP
     SUP -->|"risk assessment"| HITL
@@ -333,114 +366,428 @@ flowchart TD
 ```
 
 ### 5.4 Data Processing & Transformation
-Explain:
-- Batch/stream processing
-- Data formats
-- Storage schemas
-- Parallel processing strategy
-- Feature engineering (if relevant)
-- Embedding generation
+
+#### Batch Processing (Airflow DAGs)
+- **GDELT DAG** (runs every 15 minutes): Queries BigQuery for maritime-relevant events using CAMEO event codes (military actions, sanctions, blockades, naval activity). Downloads both Events 2.0 and GKG tables. Loads raw CSV into Snowflake Bronze via `COPY INTO` from staged files.
+- **ACLED DAG** (runs weekly, Tuesdays): Fetches conflict events via REST API, filters for coastal/port-adjacent events within 50km of known ports. Writes to Bronze.
+- **OFAC DAG** (runs daily): Downloads OpenSanctions OFAC consolidated dataset (JSON), parses for maritime-related entities (vessels, shipping companies). Upserts into Bronze with change detection.
+- **Weather DAG** (runs hourly): Pulls severe weather alerts from Weather Company API for 20 predefined chokepoint regions. Filters for storms/cyclones affecting shipping lanes. Writes to Bronze.
+- **Static data DAG** (runs once + monthly refresh): Loads World Port Index and Natural Earth coastlines into Bronze.
+
+#### Stream Processing
+- **AIS Consumer**: Python `asyncio` + `websockets` client connects to aisstream.io. Filters incoming positions by 20 predefined chokepoint bounding boxes (Suez, Hormuz, Malacca, Panama, Bab el-Mandeb, Taiwan Strait, etc.). Batches 1,000 positions, writes to Snowflake via staged CSV upload every 60 seconds.
+- **MovingPandas Processing**: Silver-layer Snowpark UDF applies MovingPandas trajectory analysis on batched AIS positions — computing stop detection (vessels stationary > 2 hours near ports), transit time through chokepoints, and speed anomalies that may indicate distress or evasion.
+
+#### Data Formats & Storage Schemas
+- **Bronze**: Raw JSON/CSV stored as Snowflake `VARIANT` columns (semi-structured). No transformation — exact mirror of source data.
+- **Silver**: Typed, deduplicated tables with consistent schemas:
+  - `silver_vessel_positions` (mmsi, lat, lon, speed, heading, timestamp, chokepoint_id)
+  - `silver_geopolitical_events` (event_id, cameo_code, actor1, actor2, lat, lon, tone, source_url, timestamp)
+  - `silver_conflict_events` (acled_id, event_type, fatalities, country, lat, lon, date)
+  - `silver_sanctions_entities` (entity_id, name, entity_type, program, vessel_imo, vessel_mmsi)
+  - `silver_weather_alerts` (alert_id, severity, event_type, lat, lon, radius_km, valid_until)
+  - `dim_ports` (port_id, name, country, lat, lon, max_draft, harbor_type)
+  - `dim_chokepoints` (chokepoint_id, name, bbox_coords, region, pct_global_trade)
+- **Gold**: Materialized views and aggregated tables:
+  - `gold_chokepoint_risk_score` — daily composite risk per chokepoint (geopolitical + weather + congestion)
+  - `gold_vessel_risk_profile` — per-vessel sanctions probability + route risk
+  - `gold_transit_analytics` — average transit times, delays, throughput per chokepoint
+
+#### Embedding Generation
+- **Source documents**: GDELT article titles + GKG themes/tone summaries, ACLED event descriptions, OFAC entity descriptions
+- **Model**: OpenAI `text-embedding-3-small` (1536 dimensions, $0.02/1M tokens)
+- **Chunking**: 512-token chunks with 64-token overlap for articles; single-chunk for sanctions entities
+- **Metadata filters**: region, date, severity_score, source_type, cameo_code
+- **Store**: ChromaDB collection `maritime_intelligence` with ~50,000–100,000 documents
 
 ### 5.5 LLM Integration Strategy
-Detail how LLMs will be used, including:
-- Prompt design
-- Retrieval-augmented generation (if used)
-- Agentic workflows (if used)
-- API usage pattern
-- How the LLM contributes to solving the problem
+
+#### Multi-Agent Architecture (LangGraph + MCP)
+
+The intelligence engine uses a **LangGraph supervisor pattern** with 5 specialist agents, connected to Snowflake and ChromaDB via an **MCP server** exposing structured tools:
+
+| Agent | LLM | Role | MCP Tools Used |
+|---|---|---|---|
+| **Supervisor** | Claude Sonnet | Routes queries to specialists, merges results, manages state | All tools (dispatch) |
+| **Vessel Tracker** | GPT-4o-mini | Tracks vessel positions, computes ETAs, detects AIS anomalies | `query_vessel_positions`, `get_port_info` |
+| **News Analyst** | Claude Sonnet | Analyzes GDELT events for maritime impact, assesses escalation | `search_geopolitical_events` (vector), `get_chokepoint_status` |
+| **Conflict Monitor** | GPT-4o-mini | Scores regions using ACLED data, flags emerging conflict zones | `get_conflict_events`, `get_chokepoint_risk` |
+| **Sanctions Checker** | GPT-4o-mini | Screens vessels/entities against OFAC, detects evasion patterns | `screen_vessel_sanctions`, `query_vessel_positions` |
+| **Weather Analyst** | GPT-4o-mini | Assesses storm/weather impact on shipping routes | `get_weather_alerts`, `get_chokepoint_status` |
+
+#### MCP Server Design
+The MCP server follows the same stdio JSON-RPC pattern proven in PE Org-AI-R CS5:
+- **6 Tools**: `get_chokepoint_risk`, `screen_vessel_sanctions`, `query_vessel_positions`, `get_weather_alerts`, `get_conflict_events`, `get_port_info`
+- **2 Resources**: `chokepoint_list` (static reference), `active_alerts` (dynamic feed)
+- **2 Prompts**: `maritime_risk_briefing`, `vessel_investigation`
+
+#### Prompt Design
+Each agent has a system prompt with:
+1. Role definition and boundaries
+2. Output schema (Pydantic JSON) — enforced by guardrails
+3. Available MCP tools with descriptions
+4. Citation requirement: every factual claim must reference a `source_id` from retrieved context
+5. Escalation criteria: when to flag for HITL review
+6. Few-shot examples from golden set (3–5 per agent)
+
+#### RAG Strategy
+1. User query or automated alert trigger → embed with same model → ChromaDB similarity search (k=10) with metadata filters (date recency, region)
+2. Top-k retrieved chunks + relevant Snowflake Gold aggregates (via MCP SQL tools) injected into agent prompt
+3. Agent generates response with inline citations
+4. Guardrails module verifies citations exist in retrieved context
+
+#### Agentic Workflow Example
+**User asks:** *"What is the current risk for LNG tankers transiting the Strait of Hormuz?"*
+
+1. Supervisor receives query → identifies geopolitical + weather + vessel dimensions → routes to News Analyst, Conflict Monitor, Weather Analyst, and Vessel Tracker in parallel
+2. News Analyst: retrieves recent GDELT events near Hormuz from ChromaDB, queries Snowflake for escalation trends → produces risk narrative with citations
+3. Conflict Monitor: queries ACLED data for recent incidents, pulls CAST forecast → scores regional conflict probability
+4. Weather Analyst: checks active severe weather alerts in Hormuz corridor → assesses routing impact
+5. Vessel Tracker: queries current AIS positions of LNG-flagged vessels near Hormuz → reports count, ETAs, and any anomalies
+6. Supervisor: merges all sub-results → computes composite risk score (0–100) → if > 75, routes to HITL gate
+7. Briefing output streamed to Streamlit chat interface with citations and recommended actions
 
 ### 5.6 Guardrails & Human-in-the-Loop (HITL)
-Describe:
-- Input moderation
-- Output validation
-- Schema enforcement (Pydantic / JSON Schema)
-- Safety layers (toxicity, hallucination detection)
-- When/where human approval is required
+
+| Guardrail | Implementation | Trigger |
+|---|---|---|
+| **Input Moderation** | Keyword filter + LLM classifier rejects off-topic/adversarial queries | All user inputs before agent routing |
+| **Output Schema Enforcement** | Pydantic models for every agent output (`RiskScore`, `RouteAdvisory`, `SanctionsMatch`, `WeatherAlert`) | Every agent response validated; malformed → retry (max 3) |
+| **Citation Grounding** | Post-processing check: every factual claim must map to a retrieved `source_id` | Ungrounded claims flagged and regenerated |
+| **Hallucination Detection** | Cross-check agent risk scores against Snowflake Gold aggregates (delta > 20% → flag) | Risk Scorer and Vessel Tracker outputs |
+| **Sanctions Accuracy Gate** | Fuzzy match threshold > 0.85 for positive sanctions match; below → HITL | Sanctions Checker outputs |
+| **HITL Approval Gate** | Streamlit panel: analyst reviews, approves/rejects/edits | Risk score > 75, sanctions confidence 0.85–0.95, rerouting advisories |
 
 ### 5.7 Evaluations & Testing
-Include:
-- LLM eval framework (rubric-based, automated graders, golden sets)
-- Unit tests for ETL, APIs, LLM wrappers, and pipeline logic
-- Integration tests
-- CI pipeline (GitHub Actions)
-- Metrics (accuracy, latency, cost, throughput)
+
+#### LLM Evaluation Framework
+- **Golden Set**: 50 curated query–response pairs covering all 5 agent types, with human-graded rubrics (accuracy 0–5, completeness 0–5, citation quality 0–5)
+- **Automated Graders**: LLM-as-judge (Claude) scoring agent outputs against golden set rubrics. Run weekly.
+- **ArkSim Stress Testing**: Synthetic user simulation with adversarial personas (confused analyst, sanctions evasion prober, off-topic attacker) to detect failure modes before production. ([ArkSim GitHub](https://github.com/arklexai/Agent-First-Organization))
+- **LangSmith Tracing**: Every agent invocation traced for latency, token usage, tool calls, and error rates
+
+#### Software Testing
+- **Unit Tests** (pytest): ETL transformation functions, Pydantic schema validation, embedding pipeline, sanctions fuzzy matching, MovingPandas trajectory processing
+- **Integration Tests**: End-to-end Airflow DAG runs on sample data, FastAPI endpoint response validation, agent workflow with mock LLM responses
+- **CI Pipeline**: GitHub Actions → lint (ruff) → type check (mypy) → unit tests → integration tests → Docker build
+
+#### Metrics
+
+| Metric | Target | Measurement |
+|---|---|---|
+| Agent accuracy (golden set) | ≥ 4.0 / 5.0 average | LLM-as-judge rubric |
+| Sanctions match precision | ≥ 90% | Manual review of top-50 matches |
+| End-to-end latency (single query) | < 30 seconds | LangSmith P95 |
+| AIS ingest throughput | ≥ 5,000 positions/min | Snowflake ingestion monitoring |
+| API response time (P95) | < 2 seconds | FastAPI logging |
+| Token cost per query | < $0.05 average | LangSmith cost tracking |
+| Test coverage | ≥ 80% | pytest-cov |
 
 ### 5.8 Proof of Concept (POC)
-Provide:
-- Preliminary EDA
-- Example transformations
-- First LLM experiments
-- Small architecture demo
-- Screenshots or code snippets
+
+The following POC components will be developed and committed to the GitHub repository:
+
+#### POC 1: AIS Streaming Ingest
+- Python async WebSocket client connecting to aisstream.io
+- Filter by Suez Canal bounding box → print vessel names, positions, speeds
+- Demonstrates: real-time data acquisition, JSON parsing, geographic filtering
+
+#### POC 2: GDELT Geopolitical Event Extraction
+- `gdeltPyR` query for maritime/shipping-related events in the last 30 days
+- EDA notebook: event frequency by country, tone distribution, top actors, CAMEO code breakdown
+- Demonstrates: big-data querying, preliminary analytics, data volume validation
+
+#### POC 3: Sanctions Embedding + Semantic Search
+- Download OFAC dataset from OpenSanctions, parse JSON, extract vessel entries
+- Embed descriptions with `text-embedding-3-small`, store in ChromaDB
+- Demo: fuzzy semantic search for vessel name returns relevant sanctions records
+- Demonstrates: vector pipeline, RAG retrieval, sanctions screening concept
+
+#### POC 4: Single-Agent LangGraph Demo
+- Minimal LangGraph graph with one News Analyst agent
+- Agent receives a question about Red Sea shipping risk → retrieves context from ChromaDB → produces a cited risk assessment using Pydantic output schema
+- Demonstrates: agentic workflow, RAG integration, structured output, MCP tool call
+
+---
 
 ## 6. Project Plan & Timeline
 
 ### 6.1 Milestones
-Break into phases:
-- **M1:** Data ingestion & scraping
-- **M2:** Big data processing pipeline
-- **M3:** LLM integration + guardrails
-- **M4:** Backend APIs
-- **M5:** Front-end / Application
-- **M6:** Cloud deployment
-- **M7:** Testing + Evals
-- **M8:** Final polishing
 
-### 6.2 Timeline
-Provide a Gantt-style table or GitHub Projects screenshot.
+| Phase | Milestone | Dates | Key Deliverables |
+|---|---|---|---|
+| **M1** | Data Ingestion & Pipeline Setup | Apr 2–6 | All 7 data source connectors operational; raw data landing in Snowflake Bronze; AIS WebSocket consumer running |
+| **M2** | Big Data Processing Pipeline | Apr 5–9 | Silver/Gold transformations in Snowflake; Airflow DAGs for all sources; data quality gates; MovingPandas trajectory processing |
+| **M3** | Embedding + Vector Pipeline | Apr 7–10 | ChromaDB populated with ~50K documents; embedding pipeline tested; metadata filters working |
+| **M4** | LLM Integration + Agents + Guardrails | Apr 9–15 | LangGraph supervisor + 5 agents; MCP server with 6 tools; RAG retrieval; Pydantic schemas; HITL gate |
+| **M5** | Backend APIs | Apr 12–16 | FastAPI endpoints for risk scores, vessel search, agent chat, alert feed; OpenAPI docs |
+| **M6** | Frontend / Dashboard | Apr 14–19 | Streamlit dashboard with Kepler.gl globe, PyGWalker EDA, risk heatmaps, agentic chat interface |
+| **M7** | Testing + Evals | Apr 18–22 | Golden set evals, ArkSim stress tests, unit/integration tests, CI pipeline green |
+| **M8** | Deployment + Polish | Apr 20–24 | Docker Compose on AWS EC2, README finalized, Codelabs doc, video recording, final submission |
+
+### 6.2 Timeline (Gantt)
+
+```
+Apr 2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+M1 ███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+M2 ░░░░░░███████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+M3 ░░░░░░░░░░███████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+M4 ░░░░░░░░░░░░░░██████████████░░░░░░░░░░░░░░░░░░
+M5 ░░░░░░░░░░░░░░░░░░░░██████████░░░░░░░░░░░░░░░░
+M6 ░░░░░░░░░░░░░░░░░░░░░░░░██████████░░░░░░░░░░░░
+M7 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██████████░░░░
+M8 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██████████
+```
+
+> Milestones overlap intentionally — parallel execution is required given the 22-day timeline.
+
+---
 
 ## 7. Team Roles & Responsibilities
-List each member and their responsibilities:
-- ETL Lead
-- Cloud Architect
-- LLM Engineer
-- QA/Test Engineer
-- Documentation Lead
+
+| Member | Primary Role | Responsibilities |
+|---|---|---|
+| **Deep Prajapati** | LLM Engineer + ETL Lead | AIS streaming pipeline, GDELT/ACLED/OFAC ingestion, ChromaDB embedding pipeline, LangGraph multi-agent system (5 agents + supervisor), MCP server, prompt engineering, LangSmith eval setup, overall architecture |
+| **Tapan Patel** | Cloud Architect + Data Engineer | Snowflake warehouse design (medallion schema), Airflow DAG development, Silver/Gold transformations, FastAPI backend, Docker Compose orchestration, AWS EC2 deployment, CI/CD pipeline |
+| **Seamus McAvoy** | QA/Test Engineer + Frontend | Streamlit dashboard (Kepler.gl globe, PyGWalker, chat UI), guardrails implementation (Pydantic schemas, HITL panel), ArkSim agent testing, test suite (pytest), documentation (Codelabs, README), video coordination |
+
+---
 
 ## 8. Risks & Mitigation
 
 ### 8.1 Potential Risks
-- Scraping failures
-- Data inconsistency
-- LLM hallucinations
-- High API cost
-- Scaling issues
 
-### 8.2 Mitigation Strategies
-- Rate-limiting + retries
-- Evals + guardrails
-- Caching embeddings
-- Distributed compute
-- Autoscaling
+| Risk | Severity | Likelihood | Mitigation Strategy |
+|---|---|---|---|
+| aisstream.io rate limits or downtime | Medium | Medium | Exponential backoff + retry; cache last-known positions; fallback to batch snapshots |
+| GDELT BigQuery free tier exhaustion | Medium | Low | Pre-filter to maritime CAMEO codes only; cache results in Snowflake; use gdeltPyR Doc API as backup |
+| LLM hallucinations on risk scores | High | Medium | Citation grounding guardrail + cross-check against Snowflake Gold + HITL gate for high-risk outputs |
+| Snowflake credit burn rate | High | Medium | XS warehouse; 60s auto-suspend; daily monitoring via `ACCOUNT_USAGE`; budget alerts at $100/$200/$250 |
+| API cost overrun (OpenAI/Claude) | Medium | Medium | GPT-4o-mini for high-volume tasks; prompt caching; embedding batch processing; daily token budget caps |
+| 22-day timeline too aggressive | High | High | Parallel milestone execution; MVP-first (core pipeline + 3 agents first, add 2 more if time permits); daily standups |
+| ACLED API access delay | Low | Medium | Register immediately; fallback to HDX pre-aggregated CSV from [data.humdata.org](https://data.humdata.org/organization/acled) |
+| Weather API rate limits | Low | Low | Cache hourly; only poll for 20 chokepoint regions, not global |
+
+---
 
 ## 9. Expected Outcomes & Metrics
 
 ### 9.1 KPIs
-Define measurable targets:
-- Accuracy
-- Runtime improvement
-- Throughput
-- Token reduction
-- Cost optimization
+
+| KPI | Target | Measurement |
+|---|---|---|
+| Data sources integrated | 7 | Count of operational pipelines |
+| Total data processed | ≥ 50 GB | Snowflake storage + query volume |
+| Agent accuracy (golden set) | ≥ 4.0 / 5.0 | LLM-as-judge rubric |
+| End-to-end query latency | < 30 seconds | LangSmith P95 |
+| Sanctions screening precision | ≥ 90% | Manual review of top-50 |
+| Dashboard load time | < 3 seconds | Streamlit profiling |
+| Test coverage | ≥ 80% | pytest-cov |
+| Total LLM cost | < $50 project lifecycle | LangSmith cost dashboard |
 
 ### 9.2 Expected Benefits
-Explain how the project will create value (technical or business).
+- **Technical Value:** Demonstrates end-to-end implementation of a production-grade agentic AI system on real maritime big data—from streaming ingest through multi-agent reasoning (MCP + LangGraph) to interactive geospatial visualization. This is a portfolio-differentiating project showcasing data engineering, LLM orchestration, and cloud architecture skills.
+- **Business Value:** A maritime risk intelligence platform of this type could save logistics companies $50K–$500K per disruption through proactive rerouting. The insurance industry spends $3B+ annually on marine war-risk premiums—automated, AI-driven assessment directly addresses this market.
+- **Academic Value:** Bridges big data engineering and agentic AI—two of the most important trends for 2025–2030. Addresses the data-heavy requirement while pushing the boundary on LLM integration with novel libraries (MovingPandas, ArkSim, Kepler.gl, PyGWalker).
+
+---
 
 ## 10. Token & Cost Report (Required)
-Describe how you will measure and report:
-- Total tokens consumed
-- Cost drivers
-- Prompt optimization strategy
-- Caching / batching techniques
+
+| Cost Category | Estimated Usage | Unit Cost | Projected Total |
+|---|---|---|---|
+| Snowflake Compute (XS warehouse) | ~200 hours over 22 days | ~$2/credit, ~1 credit/hr for XS | ~$200 |
+| Snowflake Storage | ~52 GB | $23/TB/month | ~$1.20 |
+| OpenAI Embeddings (text-embedding-3-small) | ~50M tokens | $0.02/1M tokens | ~$1.00 |
+| OpenAI GPT-4o-mini | ~10M tokens | $0.15/1M input, $0.60/1M output | ~$5.00 |
+| Claude Sonnet (reasoning agents) | ~5M tokens | $3/1M input, $15/1M output | ~$20.00 |
+| GDELT BigQuery | ~500 GB queried | Free first 1TB/month | $0 |
+| aisstream.io | Unlimited | Free tier | $0 |
+| ACLED API | Academic access | Free | $0 |
+| Weather Company API | Freemium tier | Free for limited calls | $0 |
+| **Total** | | | **~$227** |
+
+### Cost Optimization Strategies
+- **Prompt Caching:** Cache repeated system prompts and few-shot examples (~30% token savings on Claude)
+- **Tiered Model Selection:** GPT-4o-mini ($0.15/1M) for high-volume classification; Claude Sonnet ($3/1M) only for complex reasoning
+- **Embedding Batching:** Batch embed 100 documents per API call to minimize overhead
+- **Snowflake Auto-Suspend:** XS warehouse with 60-second auto-suspend; suspend overnight via Airflow
+- **Query Result Caching:** FastAPI response cache with 5-minute TTL for Gold table queries
+- **Daily Budget Monitoring:** Script checks `ACCOUNT_USAGE` views; hard cap at $50 LLM spend
+
+---
 
 ## 11. Conclusion
-Summarize why this project matters and what impact it will make.
+
+Maritime AI Sentinel addresses one of the most consequential challenges in global trade: the inability to rapidly assess and respond to geopolitical disruptions affecting maritime supply chains. By fusing real-time AIS vessel tracking with GDELT geopolitical events, ACLED conflict data, OFAC sanctions intelligence, and weather alerts across 7 data sources totaling 50+ GB, this project creates a comprehensive maritime risk intelligence platform.
+
+The technical architecture—Snowflake-centric big data processing, LangGraph multi-agent reasoning with MCP tool protocol, and Kepler.gl interactive visualization—demonstrates mastery of the core DAMG 7245 competencies: big data engineering, significant LLM use, cloud-native architecture, and user-facing application design. The integration of novel open-source libraries (MovingPandas for trajectory analytics, ArkSim for agent stress-testing, PyGWalker for interactive EDA) differentiates this from standard approaches.
+
+With a clear 22-day execution plan, proven architectural patterns from our PE Org-AI-R platform (CS1–CS5), and a realistic $227 cost budget within available Snowflake credits and API keys, this project is designed for practical implementation and successful delivery by April 24, 2026.
+
+---
 
 ## 12. References
-List all external resources, datasets, APIs, and publications used.
+
+### Data Sources & APIs
+- aisstream.io — Free real-time AIS WebSocket API: https://aisstream.io/ | [GitHub](https://github.com/aisstream/aisstream)
+- GDELT Project — Global Database of Events, Language, and Tone: https://www.gdeltproject.org/ | BigQuery: `gdelt-bq` public dataset
+- gdeltPyR — Python client for GDELT: https://pypi.org/project/gdelt/
+- GDELT Doc API Python Client: https://github.com/alex9smith/gdelt-doc-api
+- ACLED — Armed Conflict Location & Event Data Project: https://acleddata.com/ | [API docs](https://acleddata.com/acled-api-documentation)
+- ACLED on HDX — Pre-aggregated datasets: https://data.humdata.org/organization/acled
+- US OFAC via OpenSanctions: https://www.opensanctions.org/datasets/us_ofac_cons/
+- The Weather Company API: https://developer.weather.com/docs
+- World Port Index — HDX: https://data.humdata.org/dataset/world-port-index
+- Natural Earth Coastlines: https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/
+
+### Frameworks & Libraries
+- LangGraph — Agent orchestration: https://www.langchain.com/langgraph (MIT License)
+- LangSmith — LLM observability: https://www.langchain.com/langsmith
+- Anthropic MCP — Model Context Protocol: https://modelcontextprotocol.io/
+- ChromaDB — Vector database: https://www.trychroma.com/
+- MovingPandas — Trajectory analytics: https://movingpandas.github.io/movingpandas/
+- ArkSim (Arklex AI) — Agent testing framework: https://github.com/arklexai/Agent-First-Organization
+- Kepler.gl — GPU-rendered geospatial visualization: https://kepler.gl/
+- PyGWalker — Interactive visual analysis: https://github.com/Kanaries/pygwalker
+- FastAPI: https://fastapi.tiangolo.com/
+- Streamlit: https://streamlit.io/
+- Apache Airflow: https://airflow.apache.org/
+- Snowflake Snowpipe: https://docs.snowflake.com/en/user-guide/data-load-snowpipe-intro
+
+### Industry References
+- UNCTAD Review of Maritime Transport 2024: https://unctad.org/publication/review-maritime-transport-2024
+- Everstream Analytics — 2026 Supply Chain Risk Report
+- BCG — Agentic AI Value Projections (17% → 29% by 2028)
+- LangChain State of Agent Engineering (2025 Survey, 1,340 respondents): https://www.langchain.com/state-of-agent-engineering
+- Google A2A Protocol: https://a2a-protocol.org/ | [GitHub](https://github.com/a2aproject/A2A)
+
+---
 
 ## Appendix
-- Mermaid diagrams
-- Pseudocode
-- Sample prompts
-- JSON/XML schemas
+
+### A. Chokepoint Monitoring Zones
+
+| Chokepoint | Region | % Global Trade | Primary Risk Factors |
+|---|---|---|---|
+| Strait of Hormuz | Middle East | ~21% of global oil | Iran tensions, US sanctions |
+| Strait of Malacca | Southeast Asia | ~25% of global trade | Piracy, China-ASEAN tensions |
+| Suez Canal | Egypt | ~12% of global trade | Regional conflict, blockage risk |
+| Bab el-Mandeb | Yemen/Djibouti | ~9% of global trade | Houthi attacks, war-risk premiums |
+| Panama Canal | Central America | ~5% of global trade | Drought restrictions |
+| Taiwan Strait | East Asia | ~88% of largest container ships | Cross-strait tensions |
+| Danish Straits | Northern Europe | Baltic Sea access | Russia-NATO tensions |
+| Strait of Gibraltar | Mediterranean | Atlantic-Med gateway | Migration, North Africa instability |
+| Cape of Good Hope | South Africa | Suez alternative | Weather, rerouting congestion |
+| Turkish Straits | Turkey | Black Sea access | Ukraine conflict, grain exports |
+
+### B. Sample MCP Tool Schema
+```json
+{
+  "name": "get_chokepoint_risk",
+  "description": "Returns composite risk score for a maritime chokepoint",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "chokepoint_id": {
+        "type": "string",
+        "description": "Chokepoint identifier (e.g., 'hormuz', 'suez', 'malacca')"
+      },
+      "timeframe_days": {
+        "type": "integer",
+        "description": "Lookback window in days for risk calculation",
+        "default": 7
+      }
+    },
+    "required": ["chokepoint_id"]
+  }
+}
+```
+
+### C. Sample Agent Output Schema (Pydantic)
+```python
+class RiskScore(BaseModel):
+    region: str
+    composite_score: float = Field(ge=0, le=100)
+    geopolitical_score: float = Field(ge=0, le=100)
+    weather_score: float = Field(ge=0, le=100)
+    sanctions_score: float = Field(ge=0, le=100)
+    conflict_score: float = Field(ge=0, le=100)
+    timestamp: datetime
+    citations: list[Citation]
+    requires_hitl: bool = False
+
+class Citation(BaseModel):
+    source_id: str
+    source_type: Literal["gdelt", "acled", "ofac", "weather", "ais"]
+    text_snippet: str
+    confidence: float = Field(ge=0, le=1)
+
+class RouteAdvisory(BaseModel):
+    vessel_mmsi: str
+    current_route: str
+    recommended_route: str
+    additional_days: float
+    additional_cost_usd: float
+    risk_reduction: float
+    reasoning: str
+    citations: list[Citation]
+    requires_hitl: bool = True  # Always requires human approval
+```
+
+### D. Sample Prompts
+
+#### Supervisor Agent System Prompt
+```
+You are the Supervisor agent in Maritime AI Sentinel. Your role is to
+decompose maritime risk queries into sub-tasks and route them to
+specialist agents.
+
+Available agents:
+- vessel_tracker: Vessel positions, ETAs, AIS anomalies
+- news_analyst: GDELT geopolitical event analysis
+- conflict_monitor: ACLED conflict scoring and forecasting
+- sanctions_checker: OFAC vessel/entity screening
+- weather_analyst: Storm and weather routing risks
+
+For each query:
+1. Identify which agents are needed (1-5)
+2. Route sub-tasks in parallel where possible
+3. Merge results into a composite risk assessment
+4. If composite risk > 75, flag for HITL review
+5. Always include citations from agent responses
+```
+
+#### News Analyst Agent System Prompt
+```
+You are the News Analyst agent. Analyze GDELT geopolitical events for
+their impact on maritime shipping.
+
+Available MCP tools:
+- search_geopolitical_events(query, region, days_back, k) → vector search
+- get_chokepoint_status(chokepoint_id) → current transit metrics
+
+Output MUST be valid JSON matching this schema:
+{
+  "region": str,
+  "risk_level": 0-100,
+  "summary": str,
+  "key_events": [{"event": str, "source_id": str, "date": str}],
+  "escalation_probability": float,
+  "affected_chokepoints": [str]
+}
+
+CRITICAL: Every factual claim MUST cite a source_id from retrieved context.
+If risk_level > 75, set requires_hitl = true.
+```
+
+### E. Docker Compose Services
+
+| Service | Image / Build | Port | Purpose |
+|---|---|---|---|
+| `fastapi` | Custom (`./api`) | 8000 | REST API backend |
+| `streamlit` | Custom (`./dashboard`) | 8501 | Frontend dashboard |
+| `chromadb` | `chromadb/chroma:latest` | 8200 | Vector store |
+| `airflow-webserver` | `apache/airflow:2.8.1` | 8080 | DAG UI |
+| `airflow-scheduler` | `apache/airflow:2.8.1` | — | DAG execution |
+| `ais-consumer` | Custom (`./ingestion`) | — | WebSocket AIS consumer |
