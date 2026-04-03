@@ -1,0 +1,182 @@
+[
+  {
+    "mmsi": "636092399",
+    "ship_name": "MSC LUCIA",
+    "lat": 30.4567,
+    "lon": 32.3456,
+    "speed_knots": 8.2,
+    "heading": 165,
+    "source": "historical"
+  },
+  {
+    "mmsi": "477328700",
+    "ship_name": "EVER GIVEN",
+    "lat": 30.0213,
+    "lon": 32.5801,
+    "speed_knots": 7.5,
+    "heading": 170,
+    "source": "historical"
+  },
+  {
+    "mmsi": "538006119",
+    "ship_name": "MAERSK SENTOSA",
+    "lat": 29.9345,
+    "lon": 32.567,
+    "speed_knots": 9.1,
+    "heading": 350,
+    "source": "historical"
+  },
+  {
+    "mmsi": "636018570",
+    "ship_name": "CMA CGM MARCO POLO",
+    "lat": 30.8901,
+    "lon": 32.3012,
+    "speed_knots": 6.8,
+    "heading": 175,
+    "source": "historical"
+  },
+  {
+    "mmsi": "371168000",
+    "ship_name": "MSC OSCAR",
+    "lat": 29.8765,
+    "lon": 32.589,
+    "speed_knots": 8.9,
+    "heading": 350,
+    "source": "historical"
+  },
+  {
+    "mmsi": "229076000",
+    "ship_name": "NORDIC ZENITH",
+    "lat": 26.5678,
+    "lon": 56.2345,
+    "speed_knots": 12.3,
+    "heading": 280,
+    "source": "historical"
+  },
+  {
+    "mmsi": "538005890",
+    "ship_name": "EAGLE VANCOUVER",
+    "lat": 26.1234,
+    "lon": 56.789,
+    "speed_knots": 11.7,
+    "heading": 95,
+    "source": "historical"
+  },
+  {
+    "mmsi": "311000529",
+    "ship_name": "BAHRI JAZAN",
+    "lat": 26.3456,
+    "lon": 56.4567,
+    "speed_knots": 13.1,
+    "heading": 275,
+    "source": "historical"
+  },
+  {
+    "mmsi": "636019269",
+    "ship_name": "MARAN SAGITTA",
+    "lat": 25.9012,
+    "lon": 56.9012,
+    "speed_knots": 10.5,
+    "heading": 100,
+    "source": "historical"
+  },
+  {
+    "mmsi": "244780648",
+    "ship_name": "STENA BRITANNICA",
+    "lat": 51.3456,
+    "lon": 1.2345,
+    "speed_knots": 18.5,
+    "heading": 45,
+    "source": "historical"
+  },
+  {
+    "mmsi": "245208000",
+    "ship_name": "PRIDE OF KENT",
+    "lat": 51.0123,
+    "lon": 1.4567,
+    "speed_knots": 20.1,
+    "heading": 225,
+    "source": "historical"
+  },
+  {
+    "mmsi": "227004290",
+    "ship_name": "MONT ST MICHEL",
+    "lat": 50.789,
+    "lon": -0.5678,
+    "speed_knots": 15.8,
+    "heading": 180,
+    "source": "historical"
+  },
+  {
+    "mmsi": "235082256",
+    "ship_name": "SPIRIT OF BRITAIN",
+    "lat": 51.1234,
+    "lon": 1.321,
+    "speed_knots": 19.3,
+    "heading": 50,
+    "source": "historical"
+  },
+  {
+    "mmsi": "477995700",
+    "ship_name": "COSCO SHIPPING ARIES",
+    "lat": 1.2345,
+    "lon": 103.8901,
+    "speed_knots": 14.2,
+    "heading": 290,
+    "source": "historical"
+  },
+  {
+    "mmsi": "563076900",
+    "ship_name": "PACIFIC VIGOR",
+    "lat": 1.0567,
+    "lon": 104.0123,
+    "speed_knots": 12.8,
+    "heading": 110,
+    "source": "historical"
+  },
+  {
+    "mmsi": "538006447",
+    "ship_name": "MOL TRIUMPH",
+    "lat": 1.189,
+    "lon": 103.9456,
+    "speed_knots": 16.0,
+    "heading": 285,
+    "source": "historical"
+  },
+  {
+    "mmsi": "636092537",
+    "ship_name": "MSC GULSUN",
+    "lat": 1.3012,
+    "lon": 103.789,
+    "speed_knots": 13.5,
+    "heading": 105,
+    "source": "historical"
+  },
+  {
+    "mmsi": "477021300",
+    "ship_name": "OOCL HONG KONG",
+    "lat": 1.089,
+    "lon": 104.089,
+    "speed_knots": 15.7,
+    "heading": 290,
+    "source": "historical"
+  },
+  {
+    "mmsi": "372787000",
+    "ship_name": "HYMEX FORTUNE",
+    "lat": 1.1567,
+    "lon": 103.967,
+    "speed_knots": 11.2,
+    "heading": 115,
+    "source": "historical"
+  },
+  {
+    "mmsi": "538007974",
+    "ship_name": "ONE APUS",
+    "lat": 1.267,
+    "lon": 103.8234,
+    "speed_knots": 17.3,
+    "heading": 280,
+    "source": "historical"
+  }
+]
