@@ -1,5 +1,7 @@
 # Final Project Proposal
 **DAMG 7245 — Big Data and Intelligent Analytics**
+**CodeLabs Link** - https://codelabs-preview.appspot.com/?file_id=1za4d0k9SGduzSwSWQaK_Ru17rSNoVZVHDILgcNm0ooQ#0
+**YouTube Link** - " "
 
 ## Team Members
 - Deep Prajapati
