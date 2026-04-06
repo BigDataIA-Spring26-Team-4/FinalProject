@@ -140,6 +140,6 @@ TBD
 
 ### Work distribution
 
-Seamus - Ingestion pipeline & FastAPI backend
-Deep -
-Tapan -
+- Seamus - Ingestion pipeline & FastAPI backend
+- Deep -
+- Tapan -
