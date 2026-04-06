@@ -53,12 +53,10 @@ architecture-beta
 
 | Source | What Data? | How to Access? | Why We Need It? | What It Returns? | Limitations |
 |--------|-----------|----------------|-----------------|------------------|-------------|
-| **[AISStream](https://aisstream.io)** (Real-time stream, Free, API key required) | Ship positions, speed, heading, identity, type, dimensions — broadcast by every commercial vessel globally | WebSocket connection using Python `websockets` library. Data is ingested into Snowflake via Snowpipes. Served to users through FastAPI endpoints. | Core data source. Answers "where are ships?" and "how are they moving?" Feeds the dimensional model that everything else builds on. | MMSI, IMO, ship name, lat/lon, speed, course, heading, rate of turn, nav status, ship type, dimensions. ~6,000 messages/min globally. | No cargo info. Ships can go dark. GPS spoofing possible. Open ocean coverage gaps. Websocket disconnects lose data. |
-| **[GDELT](https://blog.gdeltproject.org/gdelt-geo-2-0-api-debuts/)** (On-demand API, Free, No key needed) | Global news articles — titles, sources, dates, countries, tone scores, locations. Monitors 100+ languages, updates every 15 minutes. | REST API or Python `gdeltdoc` library. Pass keyword + date range, get back matching articles. No authentication needed. | Provides the "why." If AIS shows traffic dropped, GDELT explains the cause — conflict, sanctions, port strike, disaster. | URL, title, date, domain, language, source country, tone. Up to 250 articles per query. Covers last 3 months (DOC API) or 7 days (GEO API). | English-language bias. Noisy results. Geocoding errors in article tagging. 15-min delay. Rate limiting. |
-| **[OpenWeatherMap](https://openweathermap.org/api)** (On-demand API, Free tier, API key required) | Weather conditions at any lat/lon — temperature, wind, humidity, visibility, pressure, cloud cover, weather description. | REST API with API key. Pass lat + lon, get JSON back. Free tier: 1,000 calls/day on v2.5. | Verification layer. Confirms or rules out weather as the cause of shipping anomalies. Prevents the agent from blaming a conflict when it was actually a typhoon. | Temperature (°C), feels_like, humidity (%), wind_speed (m/s), wind_deg, visibility (m), pressure (hPa), weather description. | Point data only. Free v2.5 = current weather only. Historical data needs paid plan. No wave height on free tier. |
-| **[Google Maps](https://mapsplatform.google.com/maps-products/)** (On-demand API, $200 free/month, API key + billing required) | Geocoding — converts place names ("Strait of Hormuz") into lat/lon coordinates and bounding boxes. | REST API with API key. Pass place name, get coordinates. Requires Google Cloud project with billing. Alternative: Nominatim (free, no key). | The glue connecting everything. Users type place names, but AIS, GDELT, and OpenWeather need coordinates. Without geocoding, the agent can't translate questions into queries. | Formatted address, lat, lon, bounding box (NE + SW corners), location type. Bounding boxes are critical for AIS area queries. | Maritime terms may resolve poorly. Open ocean areas fail. Needs billing setup. Some ports return point instead of area. |
-
-**How they connect:** Google Maps converts place names → coordinates. AIS uses coordinates → vessel traffic data. GDELT uses keywords → news context. OpenWeather uses coordinates → weather conditions. The LangGraph agent orchestrates all four to produce complete answers.
+| **[AISStream](https://aisstream.io)** (Real-time stream, Free, API key required) | Ship positions, speed, heading, identity, type, dimensions — broadcast by every commercial vessel globally | WebSocket connection using Python `websockets` library. Data is ingested into Snowflake via Snowpipes. Served to users through FastAPI endpoints. | Core data source. Answers "where are ships?" and "how are they moving?" | MMSI, IMO, ship name, lat/lon, speed, course, heading, rate of turn, nav status, ship type, dimensions. ~6,000 messages/min globally. | Coverage gaps. High velocity requires robust pipeline. |
+| **[GDELT](https://blog.gdeltproject.org/gdelt-geo-2-0-api-debuts/)** (On-demand API, Free, No key needed) | Global news articles — titles, sources, dates, countries, tone scores, locations. Monitors 100+ languages, updates every 15 minutes. | Python `gdeltdoc` library. Pass keyword + date range, get back matching articles. No authentication needed. | Provides the "why." If AIS shows traffic dropped, GDELT explains the cause — conflict, sanctions, port strike, disaster. | URL, title, date, domain, language, source country, tone. Up to 250 articles per query. Covers last 3 months (DOC API) or 7 days (GEO API). | English-language bias. Noisy results. Geocoding errors in article tagging. 15-min delay. Rate limiting. |
+| **[OpenWeatherMap](https://openweathermap.org/api)** (On-demand API, Free tier, API key required) | Weather conditions at any lat/lon — temperature, wind, humidity, visibility, pressure, cloud cover, weather description. | REST API with API key. Pass lat + lon, get JSON back. Free tier: 1,000 calls/day on v3.0. | Allows agent to inspect historical weather conditions. | Temperature (°C), feels_like, humidity (%), wind_speed (m/s), wind_deg, visibility (m), pressure (hPa), weather description. | Up to 1000 free calls /day. |
+| **[Google Maps](https://mapsplatform.google.com/maps-products/)** (On-demand API, $200 free/month, API key + billing required) | Geocoding — converts place names ("Strait of Hormuz") into lat/lon coordinates and bounding boxes. | REST API with API key. Pass place name, get coordinates. Requires Google Cloud project with billing. | Allows agent to translate questions into queries. | Formatted address, lat, lon, bounding box (NE + SW corners), location type. Bounding boxes are critical for AIS area queries. | Maritime terms may resolve poorly. Open ocean areas fail. Needs billing setup. Some ports return point instead of area. |
 
 ## Data Volume Estimates
 
@@ -147,11 +145,18 @@ erDiagram
 Wraps services:
 - AIS Tracker (above)
 - [OpenWeatherMap](https://openweathermap.org/api/one-call-3?collection=one_call_api_3.0)
-    - Allows querying weather at a specific location at a specific time.
+    - Allows querying weather at a specific location at a specific time (including limited forecasting)
+    - Tools:
+        - get_weather(lat, lon, timestamp) *Weather report for a specific time*
+        - get_day_weather(lat, lon, date) *Aggregate weather report for a specific day*
 - [GDELT](https://blog.gdeltproject.org/gdelt-geo-2-0-api-debuts/)
     - Provides powerful querying of international news sources to find events by location/time/keyword.
-- [Google Maps APIs](https://mapsplatform.google.com/maps-products/)
+    - Tools:
+        - get_events(query, lat, lon, timestamp)
+- [Google Maps](https://mapsplatform.google.com/maps-products/)
     - Allows resolution of natural-language place names to geographic coordinates
+    - Tools:
+        - search_place(name) *List possible entity resolutions for a natural-language place description (with optional filters)*
 
 These are provided for use in agentic workflows to answer questions such as:
 
@@ -163,7 +168,10 @@ These are provided for use in agentic workflows to answer questions such as:
 
 ### Streamlit
 
-TBD
+**Components:**
+1. Interactive map
+2. Vessel detail pages
+3. Agentic chat
 
 ### Work distribution
 
