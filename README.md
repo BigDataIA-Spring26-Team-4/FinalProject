@@ -60,6 +60,22 @@ architecture-beta
 
 **How they connect:** Google Maps converts place names → coordinates. AIS uses coordinates → vessel traffic data. GDELT uses keywords → news context. OpenWeather uses coordinates → weather conditions. The LangGraph agent orchestrates all four to produce complete answers.
 
+## Data Volume Estimates
+
+Based on observed ingestion rate of ~100 messages/second from AISStream global feed and estimated agent usage of ~100 queries/day per external API.
+
+| Source | Data Type | Per Day | 2 Weeks (Project) |
+|--------|-----------|---------|---------------------|
+| **AISStream** | Vessel position reports | ~8.6M messages (~6.5 GB raw, ~1.3 GB compressed) | ~120M messages (~90 GB raw, ~18 GB compressed) |
+| **AISStream** | Unique vessels tracked | ~10,000–15,000 | ~60,000+ |
+| **AISStream** | Rows in fact_location | ~6–7 million | ~90 million |
+| **GDELT** | News articles retrieved | ~25,000 articles (~25 MB) | ~350,000 articles (~350 MB) |
+| **OpenWeather** | Weather lookups | ~100 responses (~300 KB) | ~1,400 responses (~4 MB) |
+| **Google Maps** | Geocoding lookups | ~100 responses (~200 KB) | ~1,400 responses (~3 MB) |
+| **Total** | All sources combined | ~6.5 GB raw / ~1.3 GB stored | ~90 GB raw / ~18.4 GB stored |
+
+> **Note:** AIS is the dominant data source by volume. GDELT, OpenWeather, and Google Maps are small in size but critical for intelligence value — they provide the context that makes raw vessel data meaningful. If AIS ingestion is filtered to key maritime chokepoints, total volumes reduce to ~10–15% of the above.
+
 ## Components
 
 ### AIS Tracker
