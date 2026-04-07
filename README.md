@@ -214,7 +214,7 @@ These are provided for use in agentic workflows to answer questions such as:
 
 > How has the Iran conflict affected traffic around the Strait of Hormuz?
 
-> How does the number of ships harbored in Sydney Harbor compare to 2 years ago?
+> Show me where NORDNORGE has been over the past week?
 
 > How long did it take ship 219032032 to pass through the Panama Canal on Wednesday?
 
