@@ -150,6 +150,6 @@ These are provided for use in agentic workflows to answer questions such as:
 
 ### Work distribution
 
-Seamus - Ingestion pipeline & FastAPI backend
-Deep -
-Tapan -
+- Seamus - Ingestion pipeline & FastAPI backend
+- Deep -
+- Tapan -
