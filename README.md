@@ -53,8 +53,12 @@ architecture-beta
 
 ### AIS Tracker
 1. Data ingested via websocket from [AISStream](https://aisstream.io)
+   - Target reports: StaticData (vessel metadata) and PositionReport (current location/speed/heading)
 2. Data is parsed and cleaned, then passed into raw tables
 3. Data from raw tables is loaded to dimensional model using Snowpipes
+   - Location reports loaded via append-only flow
+   - Vessel data loaded as SCD-II
+   - Status and VesselType tables are loaded at initialization from static CSV files
 4. Data in Snowflake is provided to end applications via FastAPI
 
 #### Dimensional model
