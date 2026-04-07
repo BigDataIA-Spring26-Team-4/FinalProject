@@ -34,12 +34,14 @@ architecture-beta
     service news(cloud)[GDELT] in mcp
     service ais_wrapper(cloud)[Vessel Locations] in mcp
 
+    service redis(disk)[Redis]
     service agent(server)[LangGraph]
 
     maps:R -- L:news
     news:R -- L:weather
     weather:R -- L:ais_wrapper
-    ais_wrapper{group}:R --> L:agent
+    ais_wrapper{group}:R-->L:redis
+    redis:R-->L:agent
 
     server:T --> B:ais_wrapper{group}
 
