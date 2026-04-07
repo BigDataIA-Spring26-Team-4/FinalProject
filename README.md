@@ -269,10 +269,10 @@ All agent responses pass through four checks before reaching the user:
 | Week | Milestone | What Gets Done |
 |------|-----------|---------------|
 | Week 1 | Data pipeline up | AIS websocket running, Snowflake raw tables receiving data, Snowpipes transforming to dimensional model |
-| Week 2 | API + MCP ready | FastAPI endpoints working, MCP server wrapping all 4 external services, basic agent calling tools |
-| Week 3 | Agent + Guardrails | LangGraph agent answering multi-source questions, all 4 guardrails implemented and tested |
-| Week 4 | Frontend + Polish | Streamlit app with Kepler.gl, PyGWalker, and Chat UI. Golden eval set created and run. |
-| Week 5 | Testing + Demo prep | pytest at 80% coverage, CI/CD green, final demo rehearsal, documentation complete |
+| Week 1 | API + MCP ready | FastAPI endpoints working, MCP server wrapping all 4 external services, basic agent calling tools |
+| Week 1 | Agent + Guardrails | LangGraph agent answering multi-source questions, all 4 guardrails implemented and tested |
+| Week 2 | Frontend + Polish | Streamlit app with Kepler.gl, PyGWalker, and Chat UI. Golden eval set created and run. |
+| Week 2 | Testing + Demo prep | pytest at 80% coverage, CI/CD green, final demo rehearsal, documentation complete |
 
 
 ## Risks & Mitigation
