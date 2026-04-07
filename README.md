@@ -1,5 +1,7 @@
 # AIS Vessel Tracking
 
+Recording: [https://youtu.be/ya8crIethC4]
+
 ## Problem Statement
 
 Currently, publicly available vessel tracking data is unwieldy and difficult to get insights from. Available options include:
